@@ -1,5 +1,9 @@
 mod synthesis;
 mod commands;
+
+use std::sync::Arc;
+use std::collections::HashMap;
+use tokio::sync::RwLock;
 use songbird::SerenityInit;
 use serenity::{
     async_trait,
@@ -8,9 +12,15 @@ use serenity::{
         prelude::*,
         application::interaction::{Interaction, InteractionResponseType},
         gateway::Ready,
-        id::GuildId
+        id::{GuildId, ChannelId}
     }
 };
+
+struct TextChannelId;
+
+impl TypeMapKey for TextChannelId {
+    type Value = Arc<RwLock<HashMap<GuildId, ChannelId>>>;
+}
 
 #[derive(Debug, Default)]
 struct Handler {}
@@ -55,8 +65,18 @@ impl EventHandler for Handler {
             return;
         }
 
+        // 読み上げるテキストチャンネルを取得
+        let text_channel = {
+            let data_read = {
+                let data_read = ctx.data.read().await;
+                data_read.get::<TextChannelId>().unwrap().clone()
+            };
+            let data_lock = data_read.read().await;
+            data_lock.get(&guild.id).cloned()
+        }.unwrap();
+
         // 自身がVCにいるときのみ読み上げる
-        if guild.voice_states.contains_key(&self_id) {
+        if msg.channel_id == text_channel && guild.voice_states.contains_key(&self_id) {
             let join_handle = tokio::spawn(async move {
                 synthesis::synthesis(&msg.content).unwrap()
             });
@@ -99,6 +119,11 @@ async fn main() {
         .register_songbird()
         .await
         .expect("Error creating client");
+
+    {
+        let mut data = client.data.write().await;
+        data.insert::<TextChannelId>(Arc::new(RwLock::new(HashMap::default())));
+    }
 
     tokio::spawn(async move {
         if let Err(why) = client.start().await {
