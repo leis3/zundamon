@@ -86,11 +86,27 @@ impl EventHandler for Handler {
             if let Some(handle) = manager.get(guild.id) {
                 let mut handler = handle.lock().await;
 
-                let data = join_handle.await.unwrap();
-                let cursor = std::io::Cursor::new(data);
-                let reader = songbird::input::Reader::Extension(Box::new(cursor));
+                // ずんだもんが2倍速で喋る問題を修正するため、2チャンネルに変換する
+                let data = {
+                    let data = join_handle.await.unwrap();
+                    let reader = hound::WavReader::new(data.as_slice()).unwrap();
+                    let spec = hound::WavSpec {
+                        channels: 2,
+                        ..reader.spec()
+                    };
+                    let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
+                    let mut writer = hound::WavWriter::new(&mut buf, spec).unwrap();
+                    for sample in reader.into_samples::<i16>() {
+                        let sample = sample.unwrap();
+                        writer.write_sample(sample).unwrap();
+                        writer.write_sample(sample).unwrap();
+                    }
+                    writer.finalize().unwrap();
+                    buf
+                };
+                let reader = songbird::input::Reader::from_memory(data.into_inner());
                 let metadata = songbird::input::Metadata {
-                    channels: Some(1),
+                    channels: Some(2),
                     sample_rate: Some(24000),
                     ..Default::default()
                 };
