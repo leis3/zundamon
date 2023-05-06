@@ -57,6 +57,8 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
+        let start = std::time::Instant::now();
+
         let self_id = ctx.cache.current_user_id();
         let guild = msg.guild(&ctx.cache).unwrap();
 
@@ -117,8 +119,11 @@ impl EventHandler for Handler {
                     songbird::input::Container::Raw,
                     Some(metadata)
                 );
+                let (track, handle) = songbird::tracks::create_player(source);
 
-                handler.play_source(source);
+                println!("{} ms", start.elapsed().as_millis());
+
+                handler.enqueue(track);
             } else {
                 assert!(false);
             }
