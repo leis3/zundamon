@@ -4,7 +4,16 @@ mod commands;
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
-use songbird::SerenityInit;
+use songbird::{
+    SerenityInit,
+    input::{
+        Codec,
+        Reader,
+        Input,
+        Metadata,
+        Container
+    }
+};
 use serenity::{
     async_trait,
     prelude::*,
@@ -88,47 +97,51 @@ impl EventHandler for Handler {
             if let Some(handle) = manager.get(guild.id) {
                 let mut handler = handle.lock().await;
 
-                // ずんだもんが2倍速で喋る問題を修正するため、2チャンネルに変換する
-                let data = {
-                    let data = join_handle.await.unwrap();
-                    let reader = hound::WavReader::new(data.as_slice()).unwrap();
-                    let spec = hound::WavSpec {
-                        channels: 2,
-                        ..reader.spec()
-                    };
-                    let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
-                    let mut writer = hound::WavWriter::new(&mut buf, spec).unwrap();
-                    for sample in reader.into_samples::<i16>() {
-                        let sample = sample.unwrap();
-                        writer.write_sample(sample).unwrap();
-                        writer.write_sample(sample).unwrap();
-                    }
-                    writer.finalize().unwrap();
-                    buf
-                };
-                let reader = songbird::input::Reader::from_memory(data.into_inner());
-                let metadata = songbird::input::Metadata {
-                    channels: Some(2),
-                    sample_rate: Some(24000),
-                    ..Default::default()
-                };
-                let source = songbird::input::Input::new(
-                    false,
-                    reader,
-                    songbird::input::codec::Codec::Pcm,
-                    songbird::input::Container::Raw,
-                    Some(metadata)
-                );
-                let (track, handle) = songbird::tracks::create_player(source);
+                let source = source(join_handle.await.unwrap());
+
+                let (track, _handle) = songbird::tracks::create_player(source);
 
                 println!("{} ms", start.elapsed().as_millis());
 
                 handler.enqueue(track);
             } else {
-                assert!(false);
+                panic!();
             }
         }
     }
+}
+
+fn source(data: Vec<u8>) -> Input {
+    let rdr = hound::WavReader::new(data.as_slice()).unwrap();
+    let spec = hound::WavSpec {
+        channels: 2,
+        ..rdr.spec()
+    };
+
+    let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
+    let mut wtr = hound::WavWriter::new(&mut buf, spec).unwrap();
+
+    // ずんだもんが2倍速で喋る問題を修正するため、暫定的にサンプルを2回書き込む
+    for sample in rdr.into_samples::<i16>() {
+        let sample = sample.unwrap();
+        wtr.write_sample(sample).unwrap();
+        wtr.write_sample(sample).unwrap();
+    }
+    wtr.finalize().unwrap();
+    
+    let metadata = Metadata {
+        channels: Some(2),
+        sample_rate: Some(24000),
+        ..Default::default()
+    };
+    let rdr = Reader::from_memory(buf.into_inner());
+    Input::new(
+        false,
+        rdr,
+        Codec::Pcm,
+        Container::Raw,
+        Some(metadata)
+    )
 }
 
 #[tokio::main]
