@@ -109,6 +109,19 @@ impl EventHandler for Handler {
             }
         }
     }
+
+    /// 非botのユーザーが全員VCを抜けたら自動的に切断する
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, _new: VoiceState) {
+        let Some(old) = old else { return; };
+        let Some(channel_id) = old.channel_id else { return; };
+        let Ok(Channel::Guild(channel)) = channel_id.to_channel(&ctx.http).await else { return; };
+        let Ok(members) = channel.members(&ctx.cache).await else { return; };
+        if members.is_empty() || members.iter().all(|member| member.user.bot) {
+            let Some(guild_id) = old.guild_id else { return; };
+            let manager = songbird::get(&ctx).await.unwrap();
+            let _ = manager.leave(guild_id).await;
+        }
+    }
 }
 
 fn source(data: Vec<u8>) -> Input {
