@@ -3,7 +3,7 @@ mod commands;
 
 use std::sync::Arc;
 use std::collections::HashMap;
-use rubato::{InterpolationParameters, Resampler};
+use rubato::Resampler;
 use tokio::sync::RwLock;
 use songbird::{
     SerenityInit,
@@ -145,7 +145,7 @@ fn source(data: Vec<u8>) -> Input {
         spec.channels as usize
     ).unwrap();
 
-    let resampled = resampler.process(&vec![samples], None).unwrap().pop().unwrap();
+    let resampled = resampler.process(&[samples], None).unwrap().pop().unwrap();
 
     let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
     
