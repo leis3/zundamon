@@ -3,6 +3,7 @@ mod commands;
 
 use std::sync::Arc;
 use std::collections::HashMap;
+use rubato::{InterpolationParameters, Resampler};
 use tokio::sync::RwLock;
 use songbird::{
     SerenityInit,
@@ -126,30 +127,51 @@ impl EventHandler for Handler {
 
 fn source(data: Vec<u8>) -> Input {
     let rdr = hound::WavReader::new(data.as_slice()).unwrap();
-    let spec = hound::WavSpec {
-        channels: 2,
-        ..rdr.spec()
+    let spec = rdr.spec();
+    let samples = rdr.into_samples::<i16>().map(|s| s.unwrap() as f32).collect::<Vec<_>>();
+
+    let params = rubato::InterpolationParameters {
+        sinc_len: 256,
+        f_cutoff: 0.95,
+        oversampling_factor: 256,
+        interpolation: rubato::InterpolationType::Linear,
+        window: rubato::WindowFunction::BlackmanHarris2
     };
+    let mut resampler = rubato::SincFixedIn::<f32>::new(
+        48000. / spec.sample_rate as f64,
+        2.0,
+        params,
+        samples.len(),
+        spec.channels as usize
+    ).unwrap();
+
+    let resampled = resampler.process(&vec![samples], None).unwrap().pop().unwrap();
 
     let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
-    let mut wtr = hound::WavWriter::new(&mut buf, spec).unwrap();
+    
+    let spec = hound::WavSpec {
+        channels: 2,
+        sample_rate: 48000,
+        ..spec
+    };
 
-    // ずんだもんが2倍速で喋る問題を修正するため、暫定的にサンプルを2回書き込む
-    for sample in rdr.into_samples::<i16>() {
-        let sample = sample.unwrap();
-        wtr.write_sample(sample).unwrap();
-        wtr.write_sample(sample).unwrap();
+    let mut wtr = hound::WavWriter::new(&mut buf, spec).unwrap();
+    for sample in resampled {
+        wtr.write_sample(sample as i16).unwrap();
+        wtr.write_sample(sample as i16).unwrap();
     }
     wtr.finalize().unwrap();
-    
+
     let metadata = Metadata {
         channels: Some(2),
-        sample_rate: Some(24000),
+        sample_rate: Some(48000),
         ..Default::default()
     };
+
     let rdr = Reader::from_memory(buf.into_inner());
+
     Input::new(
-        false,
+        true,
         rdr,
         Codec::Pcm,
         Container::Raw,
