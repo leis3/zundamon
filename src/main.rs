@@ -90,7 +90,20 @@ impl EventHandler for Handler {
         // 自身がVCにいるときのみ読み上げる
         if msg.channel_id == text_channel && guild.voice_states.contains_key(&self_id) {
             let join_handle = tokio::spawn(async move {
-                synthesis::synthesis(&msg.content).unwrap()
+                let mut text = String::new();
+
+                match msg.kind {
+                    MessageType::ThreadCreated => text.push_str("新規スレッド "),
+                    MessageType::InlineReply => text.push_str("リプライ "),
+                    _ => {}
+                }
+                if !msg.attachments.is_empty() {
+                    text.push_str("添付ファイル ");
+                }
+
+                text.push_str(&msg.content);
+
+                synthesis::synthesis(&text).unwrap()
             });
 
             let manager = songbird::get(&ctx).await.unwrap();
@@ -167,6 +180,10 @@ fn source(data: Vec<u8>) -> Input {
         sample_rate: Some(48000),
         ..Default::default()
     };
+
+    let mut file = std::fs::File::create("wav/voice.wav").unwrap();
+    use std::io::Write;
+    file.write_all(&mut buf.get_ref().clone()).unwrap();
 
     let rdr = Reader::from_memory(buf.into_inner());
 
