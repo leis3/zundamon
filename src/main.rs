@@ -1,6 +1,7 @@
 mod synthesis;
 mod commands;
 
+use std::io::Read;
 use std::sync::Arc;
 use std::collections::HashMap;
 use rubato::Resampler;
@@ -89,29 +90,33 @@ impl EventHandler for Handler {
 
         // 自身がVCにいるときのみ読み上げる
         if msg.channel_id == text_channel && guild.voice_states.contains_key(&self_id) {
-            let join_handle = tokio::spawn(async move {
-                let mut text = String::new();
+            let mut text = String::new();
 
-                match msg.kind {
-                    MessageType::ThreadCreated => text.push_str("新規スレッド "),
-                    MessageType::InlineReply => text.push_str("リプライ "),
-                    _ => {}
-                }
-                if !msg.attachments.is_empty() {
-                    text.push_str("添付ファイル ");
-                }
+            match msg.kind {
+                MessageType::ThreadCreated => text.push_str("新規スレッド "),
+                MessageType::InlineReply => text.push_str("リプライ "),
+                _ => {}
+            }
+            if !msg.attachments.is_empty() {
+                text.push_str("添付ファイル ");
+            }
 
-                text.push_str(&msg.content);
+            text.push_str(&msg.content);
 
-                synthesis::synthesis(&text).unwrap()
-            });
+            synthesis::synthesis(&text).unwrap();
+
+            duct::cmd!("ffmpeg", "-i", "temp.wav", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
+                .stdout_null()
+                .stderr_null()
+                .run()
+                .unwrap();
 
             let manager = songbird::get(&ctx).await.unwrap();
 
             if let Some(handle) = manager.get(guild.id) {
                 let mut handler = handle.lock().await;
 
-                let source = source(join_handle.await.unwrap());
+                let source = songbird::ffmpeg("sound.wav").await.unwrap();
 
                 let (track, _handle) = songbird::tracks::create_player(source);
 

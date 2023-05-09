@@ -1,3 +1,4 @@
+use std::io::Write;
 use vvcore::*;
 
 /// VOICEVOX COREで音声を合成する。
@@ -8,6 +9,9 @@ pub fn synthesis(text: &str) -> Result<Vec<u8>, ResultCode> {
     vvc.load_model(1).unwrap();
 
     let wav = vvc.tts_simple(text, 1)?;
+
+    let mut file = std::fs::File::create("temp.wav").unwrap();
+    file.write_all(&mut wav.as_slice()).unwrap();
 
     Ok(wav.as_slice().to_vec())
 }
