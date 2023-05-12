@@ -33,6 +33,7 @@ impl EventHandler for Handler {
             let content = match command.data.name.as_str() {
                 "join" => commands::join::run(options, &ctx, &command).await,
                 "leave" => commands::leave::run(options, &ctx, &command).await,
+                "version" => commands::version::run(options),
                 _ => "not implemented".to_string()
             };
 
@@ -52,6 +53,7 @@ impl EventHandler for Handler {
                 commands
                     .create_application_command(|cmd| commands::join::register(cmd))
                     .create_application_command(|cmd| commands::leave::register(cmd))
+                    .create_application_command(|cmd| commands::version::register(cmd))
             }).await.unwrap();
         }
     }
