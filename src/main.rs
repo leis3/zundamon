@@ -1,21 +1,10 @@
 mod synthesis;
 mod commands;
 
-use std::io::Read;
 use std::sync::Arc;
 use std::collections::HashMap;
-use rubato::Resampler;
 use tokio::sync::RwLock;
-use songbird::{
-    SerenityInit,
-    input::{
-        Codec,
-        Reader,
-        Input,
-        Metadata,
-        Container
-    }
-};
+use songbird::SerenityInit;
 use serenity::{
     async_trait,
     prelude::*,
@@ -141,64 +130,6 @@ impl EventHandler for Handler {
             let _ = manager.leave(guild_id).await;
         }
     }
-}
-
-fn source(data: Vec<u8>) -> Input {
-    let rdr = hound::WavReader::new(data.as_slice()).unwrap();
-    let spec = rdr.spec();
-    let samples = rdr.into_samples::<i16>().map(|s| s.unwrap() as f32).collect::<Vec<_>>();
-
-    let params = rubato::InterpolationParameters {
-        sinc_len: 256,
-        f_cutoff: 0.95,
-        oversampling_factor: 256,
-        interpolation: rubato::InterpolationType::Linear,
-        window: rubato::WindowFunction::BlackmanHarris2
-    };
-    let mut resampler = rubato::SincFixedIn::<f32>::new(
-        48000. / spec.sample_rate as f64,
-        2.0,
-        params,
-        samples.len(),
-        spec.channels as usize
-    ).unwrap();
-
-    let resampled = resampler.process(&[samples], None).unwrap().pop().unwrap();
-
-    let mut buf = std::io::Cursor::new(Vec::with_capacity(data.len() * 2));
-    
-    let spec = hound::WavSpec {
-        channels: 2,
-        sample_rate: 48000,
-        ..spec
-    };
-
-    let mut wtr = hound::WavWriter::new(&mut buf, spec).unwrap();
-    for sample in resampled {
-        wtr.write_sample(sample as i16).unwrap();
-        wtr.write_sample(sample as i16).unwrap();
-    }
-    wtr.finalize().unwrap();
-
-    let metadata = Metadata {
-        channels: Some(2),
-        sample_rate: Some(48000),
-        ..Default::default()
-    };
-
-    let mut file = std::fs::File::create("wav/voice.wav").unwrap();
-    use std::io::Write;
-    file.write_all(&mut buf.get_ref().clone()).unwrap();
-
-    let rdr = Reader::from_memory(buf.into_inner());
-
-    Input::new(
-        true,
-        rdr,
-        Codec::Pcm,
-        Container::Raw,
-        Some(metadata)
-    )
 }
 
 #[tokio::main]
