@@ -34,6 +34,7 @@ impl EventHandler for Handler {
                 "join" => commands::join::run(options, &ctx, &command).await,
                 "leave" => commands::leave::run(options, &ctx, &command).await,
                 "version" => commands::version::run(options),
+                "skip" => commands::skip::run(options, &ctx, &command).await,
                 _ => "not implemented".to_string()
             };
 
@@ -54,6 +55,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::join::register(cmd))
                     .create_application_command(|cmd| commands::leave::register(cmd))
                     .create_application_command(|cmd| commands::version::register(cmd))
+                    .create_application_command(|cmd| commands::skip::register(cmd))
             }).await.unwrap();
         }
     }
