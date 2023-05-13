@@ -1,6 +1,8 @@
 mod synthesis;
 mod commands;
+mod dictionary;
 
+use dictionary::Dictionary;
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
@@ -22,6 +24,12 @@ impl TypeMapKey for TextChannelId {
     type Value = Arc<RwLock<HashMap<GuildId, ChannelId>>>;
 }
 
+struct DictData;
+
+impl TypeMapKey for DictData {
+    type Value = Arc<RwLock<Dictionary>>;
+}
+
 #[derive(Debug, Default)]
 struct Handler {}
 
@@ -35,6 +43,13 @@ impl EventHandler for Handler {
                 "leave" => commands::leave::run(options, &ctx, &command).await,
                 "version" => commands::version::run(options),
                 "skip" => commands::skip::run(options, &ctx, &command).await,
+                "dictionary" => {
+                    let dict_lock = {
+                        let data_read = ctx.data.read().await;
+                        data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+                    };
+                    commands::dictionary::run(options, dict_lock).await
+                },
                 _ => "not implemented".to_string()
             };
 
@@ -56,6 +71,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::leave::register(cmd))
                     .create_application_command(|cmd| commands::version::register(cmd))
                     .create_application_command(|cmd| commands::skip::register(cmd))
+                    .create_application_command(|cmd| commands::dictionary::register(cmd))
             }).await.unwrap();
         }
     }
@@ -149,6 +165,7 @@ async fn main() {
     {
         let mut data = client.data.write().await;
         data.insert::<TextChannelId>(Arc::new(RwLock::new(HashMap::default())));
+        data.insert::<DictData>(Arc::new(RwLock::new(Dictionary::new())));
     }
 
     tokio::spawn(async move {
