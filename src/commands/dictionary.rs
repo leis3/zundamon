@@ -117,7 +117,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                     option.name("format")
                         .description("出力するフォーマット")
                         .kind(CommandOptionType::String)
-                        .add_string_choice("CSV", "CSV")
                         .add_string_choice("JSON", "JSON")
                         .required(true)
                 })

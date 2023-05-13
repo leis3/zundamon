@@ -88,6 +88,7 @@ impl Dictionary {
     pub fn update(&mut self, item: DictionaryItem) -> bool {
         if let Some(position) = self.position(&item.key) {
             self.items[position] = item;
+            self.items.sort_unstable_by_key(|item| item.priority);
             true
         } else {
             false
@@ -96,5 +97,16 @@ impl Dictionary {
     
     pub fn reset(&mut self) {
         self.items.clear();
+    }
+
+    pub fn import(&mut self, dict: &Dictionary, overwrite: bool) {
+        for item in &dict.items {
+            if let (Some(position), true) = (self.position(&item.key), overwrite) {
+                self.items[position] = item.clone();
+            } else {
+                self.items.push(item.clone());
+            }
+        }
+        self.items.sort_unstable_by_key(|item| item.priority);
     }
 }
