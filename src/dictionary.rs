@@ -93,4 +93,8 @@ impl Dictionary {
             false
         }
     }
+    
+    pub fn reset(&mut self) {
+        self.items.clear();
+    }
 }
