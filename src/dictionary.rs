@@ -59,21 +59,38 @@ impl Dictionary {
 
         text
     }
+
+    fn position(&self, key: &str) -> Option<usize> {
+        self.items.iter().position(|_item| _item.key == key)
+    }
     
     pub fn add(&mut self, item: DictionaryItem) {
-        self.items.push(item);
+        if let Some(position) = self.position(&item.key) {
+            self.items[position] = item;
+        }
+        else {
+            self.items.push(item);
+        }
         self.items.sort_unstable_by_key(|item| item.priority);
     }
 
-    pub fn remove(&mut self, key: &str) {
-        if let Some(position) = self.items.iter().position(|item| item.key == key) {
+    /// return true if removed
+    pub fn remove(&mut self, key: &str) -> bool {
+        if let Some(position) = self.position(key) {
             self.items.remove(position);
+            true
+        } else {
+            false
         }
     }
 
-    pub fn update(&mut self, item: DictionaryItem) {
-        if let Some(position) = self.items.iter().position(|_item| _item.key == item.key) {
+    /// return true if updated
+    pub fn update(&mut self, item: DictionaryItem) -> bool {
+        if let Some(position) = self.position(&item.key) {
             self.items[position] = item;
+            true
+        } else {
+            false
         }
     }
 }

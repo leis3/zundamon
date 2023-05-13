@@ -16,10 +16,8 @@ pub async fn run(options: &[CommandDataOption], dict: Arc<RwLock<Dictionary>>) -
     let CommandDataOptionValue::Integer(priority) = *map["優先度"] else { panic!() };
     let item = DictionaryItem { key, value, is_regex, priority };
 
-    {
-        let mut dict = dict.write().await;
-        dict.add(item);
-    }
+    let mut dict = dict.write().await;
+    dict.add(item);
 
     "辞書に登録しました。".into()
 }
