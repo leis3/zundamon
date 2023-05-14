@@ -12,19 +12,19 @@ use serenity::{
     prelude::*,
     model::{
         prelude::*,
-        application::interaction::{Interaction, InteractionResponseType},
+        application::interaction::Interaction,
         gateway::Ready,
         id::{GuildId, ChannelId}
     }
 };
 
-struct TextChannelId;
+pub struct TextChannelId;
 
 impl TypeMapKey for TextChannelId {
     type Value = Arc<RwLock<HashMap<GuildId, ChannelId>>>;
 }
 
-struct DictData;
+pub struct DictData;
 
 impl TypeMapKey for DictData {
     type Value = Arc<RwLock<Dictionary>>;
@@ -38,25 +38,14 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
             let options = &command.data.options;
-            let content = match command.data.name.as_str() {
+            if let Err(why) = match command.data.name.as_str() {
                 "join" => commands::join::run(options, &ctx, &command).await,
                 "leave" => commands::leave::run(options, &ctx, &command).await,
-                "version" => commands::version::run(options),
+                "version" => commands::version::run(options, &ctx, &command).await,
                 "skip" => commands::skip::run(options, &ctx, &command).await,
-                "dictionary" => {
-                    let dict_lock = {
-                        let data_read = ctx.data.read().await;
-                        data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
-                    };
-                    commands::dictionary::run(options, dict_lock).await
-                },
-                _ => "not implemented".to_string()
-            };
-
-            if let Err(why) = command.create_interaction_response(&ctx.http, |response| {
-                response.kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| message.content(content))
-            }).await {
+                "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
+                _ => unimplemented!()
+            } {
                 println!("Cannot respond to slash command: {why}");
             }
         }

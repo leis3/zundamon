@@ -1,11 +1,16 @@
-use std::sync::Arc;
 use std::collections::HashMap;
-use tokio::sync::RwLock;
-use crate::dictionary::{Dictionary, DictionaryItem};
+use crate::DictData;
+use crate::dictionary::DictionaryItem;
+use serenity::prelude::*;
+use serenity::Result;
 use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::model::application::interaction::application_command::CommandDataOptionValue;
+use serenity::model::application::interaction::{
+    InteractionResponseType,
+    application_command::ApplicationCommandInteraction
+};
 
-pub async fn run(options: &[CommandDataOption], dict: Arc<RwLock<Dictionary>>) -> String {
+pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
@@ -16,11 +21,19 @@ pub async fn run(options: &[CommandDataOption], dict: Arc<RwLock<Dictionary>>) -
     let CommandDataOptionValue::Integer(priority) = *map["優先度"] else { panic!() };
     let item = DictionaryItem { key, value, is_regex, priority };
 
+    let dict = {
+        let data_read = ctx.data.read().await;
+        data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+    };
     let mut dict = dict.write().await;
-    if dict.update(item) {
-        "辞書を上書きしました。".into()
+    let msg = if dict.update(item) {
+        "辞書を上書きしました。"
     } else {
-        "指定した単語は辞書に登録されていません。".into()
-    }
+        "指定した単語は辞書に登録されていません。"
+    };
 
+    interaction.create_interaction_response(&ctx.http, |response| {
+        response.kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(|message| message.content(msg))
+    }).await
 }

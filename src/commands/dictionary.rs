@@ -6,24 +6,24 @@ mod list;
 mod export;
 mod import;
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use crate::dictionary::Dictionary;
+use serenity::Result;
+use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::model::prelude::command::CommandOptionType;
+use serenity::model::prelude::interaction::application_command::CommandDataOption;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 
-pub async fn run(options: &[CommandDataOption], dict: Arc<RwLock<Dictionary>>) -> String {
+pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     let option = &options[0];
 
     match option.name.as_str() {
-        "add" => add::run(&option.options, dict).await,
-        "remove" => remove::run(&option.options, dict).await,
-        "update" => update::run(&option.options, dict).await,
-        "reset" => reset::run(&option.options, dict).await,
-        "list" => list::run(&option.options, dict).await,
-        "export" => export::run(&option.options, dict).await,
-        "import" => import::run(&option.options, dict).await,
+        "add" => add::run(&option.options, ctx, interaction).await,
+        "remove" => remove::run(&option.options, ctx, interaction).await,
+        "update" => update::run(&option.options, ctx, interaction).await,
+        "reset" => reset::run(&option.options, ctx, interaction).await,
+        "list" => list::run(&option.options, ctx, interaction).await,
+        "export" => export::run(&option.options, ctx, interaction).await,
+        "import" => import::run(&option.options, ctx, interaction).await,
         _ => panic!("unexpected subcommand name")
     }
 }
