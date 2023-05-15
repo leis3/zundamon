@@ -2,7 +2,6 @@ mod add;
 mod remove;
 mod update;
 mod reset;
-mod list;
 mod export;
 mod import;
 
@@ -21,7 +20,6 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
         "remove" => remove::run(&option.options, ctx, interaction).await,
         "update" => update::run(&option.options, ctx, interaction).await,
         "reset" => reset::run(&option.options, ctx, interaction).await,
-        "list" => list::run(&option.options, ctx, interaction).await,
         "export" => export::run(&option.options, ctx, interaction).await,
         "import" => import::run(&option.options, ctx, interaction).await,
         _ => panic!("unexpected subcommand name")
@@ -102,11 +100,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
         .create_option(|option| {
             option.name("reset")
                 .description("辞書をリセットします。")
-                .kind(CommandOptionType::SubCommand)
-        })
-        .create_option(|option| {
-            option.name("list")
-                .description("辞書に登録されている単語の一覧を出力します。")
                 .kind(CommandOptionType::SubCommand)
         })
         .create_option(|option| {
