@@ -72,12 +72,14 @@ impl Dictionary {
             self.items.push(item);
         }
         self.items.sort_unstable_by_key(|item| item.priority);
+        let _ = self.save();
     }
 
     /// return true if removed
     pub fn remove(&mut self, key: &str) -> bool {
         if let Some(position) = self.position(key) {
             self.items.remove(position);
+            let _ = self.save();
             true
         } else {
             false
@@ -89,6 +91,7 @@ impl Dictionary {
         if let Some(position) = self.position(&item.key) {
             self.items[position] = item;
             self.items.sort_unstable_by_key(|item| item.priority);
+            let _ = self.save();
             true
         } else {
             false
@@ -97,6 +100,7 @@ impl Dictionary {
     
     pub fn reset(&mut self) {
         self.items.clear();
+        let _ = self.save();
     }
 
     pub fn import(&mut self, dict: &Dictionary, overwrite: bool) {
@@ -108,5 +112,6 @@ impl Dictionary {
             }
         }
         self.items.sort_unstable_by_key(|item| item.priority);
+        let _ = self.save();
     }
 }
