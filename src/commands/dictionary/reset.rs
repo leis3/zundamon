@@ -1,12 +1,16 @@
 use crate::DictData;
 use serenity::prelude::*;
 use serenity::Result;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
-use serenity::model::application::interaction::{
-    InteractionResponseType,
-    application_command::ApplicationCommandInteraction
+use serenity::model::application::{
+    component::ButtonStyle,
+    interaction::{
+        InteractionResponseType,
+        application_command::{
+            CommandDataOption,
+            ApplicationCommandInteraction
+        }
+    }
 };
-use serenity::model::application::component::ButtonStyle;
 
 pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     interaction.create_interaction_response(&ctx.http, |response| {

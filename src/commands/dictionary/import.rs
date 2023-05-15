@@ -3,14 +3,16 @@ use crate::DictData;
 use crate::dictionary::Dictionary;
 use serenity::prelude::*;
 use serenity::Result;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
-use serenity::model::application::interaction::application_command::CommandDataOptionValue;
 use serenity::model::application::interaction::{
     InteractionResponseType,
-    application_command::ApplicationCommandInteraction
+    application_command::{
+        CommandDataOption,
+        CommandDataOptionValue,
+        ApplicationCommandInteraction
+    }
 };
 
-async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> impl ToString {
+async fn run_inner(options: &[CommandDataOption], ctx: &Context, _interaction: &ApplicationCommandInteraction) -> impl ToString {
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
