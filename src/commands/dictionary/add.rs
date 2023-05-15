@@ -17,8 +17,8 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
 
     let CommandDataOptionValue::String(key) = map["単語"].clone() else { panic!() };
     let CommandDataOptionValue::String(value) = map["読み"].clone() else { panic!() };
-    let CommandDataOptionValue::Boolean(is_regex) = *map["正規表現"] else { panic!() };
-    let CommandDataOptionValue::Integer(priority) = *map["優先度"] else { panic!() };
+    let CommandDataOptionValue::Boolean(is_regex) = **map.get("正規表現").unwrap_or(&&CommandDataOptionValue::Boolean(false)) else { panic!() };
+    let CommandDataOptionValue::Integer(priority) = **map.get("優先度").unwrap_or(&&CommandDataOptionValue::Integer(0)) else { panic!() };
     let item = DictionaryItem { key, value, is_regex, priority };
 
     let dict = {
