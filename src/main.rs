@@ -36,18 +36,21 @@ struct Handler {}
 #[async_trait]
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::ApplicationCommand(command) = interaction {
-            let options = &command.data.options;
-            if let Err(why) = match command.data.name.as_str() {
-                "join" => commands::join::run(options, &ctx, &command).await,
-                "leave" => commands::leave::run(options, &ctx, &command).await,
-                "version" => commands::version::run(options, &ctx, &command).await,
-                "skip" => commands::skip::run(options, &ctx, &command).await,
-                "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
-                _ => unimplemented!()
-            } {
-                println!("Cannot respond to slash command: {why}");
-            }
+        match interaction {
+            Interaction::ApplicationCommand(command) => {
+                let options = &command.data.options;
+                if let Err(why) = match command.data.name.as_str() {
+                    "join" => commands::join::run(options, &ctx, &command).await,
+                    "leave" => commands::leave::run(options, &ctx, &command).await,
+                    "version" => commands::version::run(options, &ctx, &command).await,
+                    "skip" => commands::skip::run(options, &ctx, &command).await,
+                    "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
+                    _ => unimplemented!()
+                } {
+                    println!("Cannot respond to slash command: {why}");
+                }
+            },
+            _ => {}
         }
     }
 
@@ -77,14 +80,14 @@ impl EventHandler for Handler {
         }
 
         // 読み上げるテキストチャンネルを取得
-        let text_channel = {
+        let Some(text_channel) = ({
             let data_read = {
                 let data_read = ctx.data.read().await;
                 data_read.get::<TextChannelId>().unwrap().clone()
             };
             let data_lock = data_read.read().await;
             data_lock.get(&guild.id).cloned()
-        }.unwrap();
+        }) else { return; };
 
         // 自身がVCにいるときのみ読み上げる
         if msg.channel_id == text_channel && guild.voice_states.contains_key(&self_id) {
