@@ -7,7 +7,7 @@ const FILENAME: &str = "dictionary.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Dictionary {
-    items: Vec<DictionaryItem>
+    pub items: Vec<DictionaryItem>
 }
 
 
