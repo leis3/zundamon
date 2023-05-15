@@ -2,8 +2,10 @@ mod synthesis;
 mod commands;
 mod dictionary;
 
+use chrono::Timelike;
 use dictionary::Dictionary;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 use songbird::SerenityInit;
@@ -31,7 +33,9 @@ impl TypeMapKey for DictData {
 }
 
 #[derive(Debug, Default)]
-struct Handler {}
+struct Handler {
+    is_loop_running: AtomicBool
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -65,6 +69,61 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::skip::register(cmd))
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
             }).await.unwrap();
+        }
+    }
+
+    async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
+        if !self.is_loop_running.load(Ordering::Relaxed) {
+            let ctx = Arc::new(ctx);
+            tokio::spawn(async move {
+                loop {
+                    let time = std::time::SystemTime::
+                        now()
+                        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs();
+                    if ((time % 3600) / 60, time % 60) == (0, 0) {
+                        let local_hour = chrono::offset::Local::now().hour();
+                        for guild in guilds.clone() {
+                            let is_in_vc = guild.to_guild_cached(&ctx.cache)
+                                .map(|guild| guild.voice_states.contains_key(&ctx.cache.current_user_id()));
+                            if is_in_vc == Some(true) {
+                                let ctx = Arc::clone(&ctx);
+                                tokio::spawn(async move {
+                                    let text = format!(
+                                        "{}{}時をお知らせします。",
+                                        if local_hour < 12 {"午前"} else {"午後"},
+                                        local_hour % 12
+                                    );
+                                    synthesis::synthesis(&text).unwrap();
+                                    duct::cmd!("ffmpeg", "-i", "temp.wav", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
+                                        .stdout_null()
+                                        .stderr_null()
+                                        .run()
+                                        .unwrap();
+    
+                                    let manager = songbird::get(&ctx).await.unwrap();
+    
+                                    if let Some(handle) = manager.get(guild) {
+                                        let mut handler = handle.lock().await;
+                        
+                                        let source = songbird::ffmpeg("sound.wav").await.unwrap();
+                        
+                                        let (track, _handle) = songbird::tracks::create_player(source);
+                        
+                                        handler.enqueue(track);
+                                    } else {
+                                        panic!();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                }
+            });
+
+            self.is_loop_running.swap(true, Ordering::Relaxed);
         }
     }
 
