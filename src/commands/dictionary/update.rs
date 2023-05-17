@@ -28,14 +28,16 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
         data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
     };
     let mut dict = dict.write().await;
-    let msg = if dict.update(item) {
-        "辞書を上書きしました。"
-    } else {
-        "指定した単語は辞書に登録されていません。"
-    };
+    let updated = dict.update(item);
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(|message| message.content(msg))
+            .interaction_response_data(|message| {
+                if updated {
+                    message.content("辞書を上書きしました。")
+                } else {
+                    message.ephemeral(true).content("指定した単語は辞書に登録されていません。")
+                }
+            })
     }).await
 }

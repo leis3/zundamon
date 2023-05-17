@@ -12,15 +12,18 @@ pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &Ap
 
     let manager = songbird::get(ctx).await.unwrap();
 
-    let msg = if manager.leave(guild_id).await.is_err() {
-        "切断に失敗しました。"
-    } else {
-        "切断しました。"
-    };    
+    let success =  manager.leave(guild_id).await.is_ok();
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(|message| message.content(msg))
+            .interaction_response_data(|message| {
+                let msg = if success {
+                    "切断に失敗しました。"
+                } else {
+                    "切断しました。"
+                };
+                message.ephemeral(!success).content(msg)
+            })
     }).await
 }
 

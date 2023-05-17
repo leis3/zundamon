@@ -64,15 +64,19 @@ impl Dictionary {
         self.items.iter().position(|_item| _item.key == key)
     }
     
-    pub fn add(&mut self, item: DictionaryItem) {
-        if let Some(position) = self.position(&item.key) {
+    /// return true if updated
+    pub fn add(&mut self, item: DictionaryItem) -> bool {
+        let updated = if let Some(position) = self.position(&item.key) {
             self.items[position] = item;
+            true
         }
         else {
             self.items.push(item);
-        }
+            false
+        };
         self.items.sort_unstable_by_key(|item| item.priority);
         let _ = self.save();
+        updated
     }
 
     /// return true if removed

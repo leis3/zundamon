@@ -3,6 +3,7 @@ use crate::DictData;
 use crate::dictionary::DictionaryItem;
 use serenity::prelude::*;
 use serenity::Result;
+use serenity::utils::Color;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::{
@@ -28,10 +29,24 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
         data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
     };
     let mut dict = dict.write().await;
-    dict.add(item);
+    let updated = dict.add(item.clone());
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(|message| message.content("辞書に登録しました。"))
+            .interaction_response_data(|message| {
+                message.embed(|embed| {
+                    let title = if updated {
+                        "辞書を上書きしました。"
+                    } else {
+                        "辞書に登録しました。"
+                    };
+                    embed.title(title)
+                        .color(Color::from_rgb(0x66, 0xbb, 0x6a))
+                        .fields([
+                            ("単語", format!("`{}`", item.key), false),
+                            ("読み", format!("`{}`", item.value), false)
+                        ])
+                })
+            })
     }).await
 }

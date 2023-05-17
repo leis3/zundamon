@@ -1,5 +1,4 @@
 use crate::TextChannelId;
-use serenity::Result;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::prelude::*;
@@ -8,7 +7,7 @@ use serenity::model::application::interaction::{
     application_command::ApplicationCommandInteraction
 };
 
-async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> impl ToString {
+async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).unwrap();
 
@@ -17,12 +16,12 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
         .and_then(|voice_state| voice_state.channel_id);
 
     let Some(connect_to) = channel_id else {
-        return "接続に失敗しました。";
+        return Err("接続に失敗しました。");
     };
 
     let manager = songbird::get(ctx).await.unwrap();
     if manager.join(guild_id, connect_to).await.1.is_err() {
-        return "接続に失敗しました。";
+        return Err("接続に失敗しました。");
     }
 
     // メッセージを読むテキストチャンネルを設定する
@@ -36,14 +35,23 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
         data.insert(guild_id, interaction.channel_id);
     }
 
-    "接続しました。"
+    Ok("接続しました。")
 }
 
-pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
     let msg = run_inner(ctx, interaction).await;
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
-            .interaction_response_data(|message| message.content(msg))
+            .interaction_response_data(|message| {
+                match msg {
+                    Ok(msg) => {
+                        message.content(msg)
+                    },
+                    Err(msg) => {
+                        message.ephemeral(true).content(msg)
+                    }
+                }
+            })
     }).await
 }
 
