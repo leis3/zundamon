@@ -21,6 +21,17 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
     let CommandDataOptionValue::String(value) = map["読み"].clone() else { panic!() };
     let CommandDataOptionValue::Boolean(is_regex) = **map.get("正規表現").unwrap_or(&&CommandDataOptionValue::Boolean(false)) else { panic!() };
     let CommandDataOptionValue::Integer(priority) = **map.get("優先度").unwrap_or(&&CommandDataOptionValue::Integer(0)) else { panic!() };
+
+    if is_regex && regex::Regex::new(&key).is_err() {
+        let msg = "入力した正規表現が無効です。";
+        return interaction.create_interaction_response(&ctx.http, |response| {
+            response.kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| {
+                    message.ephemeral(true).content(msg)
+                })
+        }).await;
+    }
+    
     let item = DictionaryItem { key, value, is_regex, priority };
 
     let dict = {
