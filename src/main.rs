@@ -21,6 +21,8 @@ use serenity::{
     }
 };
 
+const MAX_TEXT_LEN: usize = 255;
+
 pub struct TextChannelId;
 
 impl TypeMapKey for TextChannelId {
@@ -170,6 +172,11 @@ impl EventHandler for Handler {
             }
 
             text.push_str(&msg.content);
+
+            // 長文は省略
+            if text.chars().count() > MAX_TEXT_LEN {
+                text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
+            }
 
             synthesis::synthesis(&text).unwrap();
 
