@@ -1,4 +1,4 @@
-use crate::DictData;
+use crate::ConfigData;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::model::application::{
@@ -32,6 +32,8 @@ pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &Ap
             })
     }).await?;
 
+    let guild_id = interaction.guild_id.unwrap();
+
     let msg_interaction = interaction
         .get_interaction_response(&ctx.http).await?
         .await_component_interaction(&ctx.shard).await
@@ -43,12 +45,12 @@ pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &Ap
             "リセットをキャンセルしました。"
         },
         "reset_do" => {
-            let dict = {
+            let config = {
                 let data_read = ctx.data.read().await;
-                data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+                data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
             };
-            let mut dict = dict.write().await;
-            dict.reset();
+            let mut config = config.write().await;
+            config.0.get_mut(&guild_id).unwrap().dictionary.reset();
             "辞書をリセットしました。"
         },
         _ => unreachable!()

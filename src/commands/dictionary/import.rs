@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::DictData;
+use crate::ConfigData;
 use crate::dictionary::Dictionary;
 use serenity::prelude::*;
 use serenity::utils::Color;
@@ -12,7 +12,7 @@ use serenity::model::application::interaction::{
     }
 };
 
-async fn run_inner(options: &[CommandDataOption], ctx: &Context, _interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
+async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
@@ -29,17 +29,19 @@ async fn run_inner(options: &[CommandDataOption], ctx: &Context, _interaction: &
         return Err("ファイルの取得に失敗しました。");
     };
 
+    let guild_id = interaction.guild_id.unwrap();
+
     match format {
         "json" => {
             let Ok(new_dict) = response.json::<Dictionary>().await else {
                 return Err("無効なJSONデータです。");
             };
-            let dict = {
+            let config = {
                 let data_read = ctx.data.read().await;
-                data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+                data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
             };
-            let mut dict = dict.write().await;
-            dict.import(&new_dict, overwrite);
+            let mut dict = config.write().await;
+            dict.0.get_mut(&guild_id).unwrap().dictionary.import(&new_dict, overwrite);
             Ok("辞書をインポートしました。")
         },
         _ => unreachable!("unsupported file format")

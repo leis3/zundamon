@@ -1,9 +1,8 @@
+use crate::config::{CONFIG_DIR, CONFIG_FILE};
 use std::path::Path;
-use std::io::{Result, Write};
+use std::io::Result;
 use serde::{Serialize, Deserialize};
-
-const DIR: &str = "data";
-const FILENAME: &str = "dictionary.json";
+use serenity::model::prelude::GuildId;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Dictionary {
@@ -22,27 +21,13 @@ pub struct DictionaryItem {
 }
 
 impl Dictionary {
-    pub fn new() -> Self {
-        if let Ok(dict) = Self::load() {
-            dict
-        } else {
-            Self::default()
-        }
-    }
 
-    pub fn load() -> Result<Self> {
-        let content = std::fs::read_to_string(Path::new(DIR).join(FILENAME))?;
+    pub fn load(guild_id: GuildId) -> Result<Self> {
+        let path = Path::new(CONFIG_DIR).join(CONFIG_FILE).join(guild_id.0.to_string());
+        let content = std::fs::read_to_string(path)?;
         let mut dic: Dictionary = serde_json::from_str(&content)?;
         dic.items.sort_unstable_by_key(|item| item.priority);
         Ok(dic)
-    }
-
-    pub fn save(&self) -> Result<()> {
-        if !Path::new(DIR).exists() {
-            std::fs::create_dir(DIR)?;
-        }
-        let mut file = std::fs::File::create(Path::new(DIR).join(FILENAME))?;
-        writeln!(file, "{}", serde_json::to_string_pretty(self)?)
     }
 
     pub fn apply(&self, text: &str) -> String {
@@ -75,7 +60,6 @@ impl Dictionary {
             false
         };
         self.items.sort_unstable_by_key(|item| item.priority);
-        let _ = self.save();
         updated
     }
 
@@ -83,7 +67,6 @@ impl Dictionary {
     pub fn remove(&mut self, key: &str) -> bool {
         if let Some(position) = self.position(key) {
             self.items.remove(position);
-            let _ = self.save();
             true
         } else {
             false
@@ -95,7 +78,6 @@ impl Dictionary {
         if let Some(position) = self.position(&item.key) {
             self.items[position] = item;
             self.items.sort_unstable_by_key(|item| item.priority);
-            let _ = self.save();
             true
         } else {
             false
@@ -104,7 +86,6 @@ impl Dictionary {
     
     pub fn reset(&mut self) {
         self.items.clear();
-        let _ = self.save();
     }
 
     pub fn import(&mut self, dict: &Dictionary, overwrite: bool) {
@@ -116,6 +97,5 @@ impl Dictionary {
             }
         }
         self.items.sort_unstable_by_key(|item| item.priority);
-        let _ = self.save();
     }
 }

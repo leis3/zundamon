@@ -1,4 +1,4 @@
-use crate::DictData;
+use crate::ConfigData;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::utils::Color;
@@ -16,12 +16,14 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
         panic!()
     };
 
-    let dict = {
+    let guild_id = interaction.guild_id.unwrap();
+
+    let config = {
         let data_read = ctx.data.read().await;
-        data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+        data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
     };
-    let mut dict = dict.write().await;
-    let removed = dict.remove(key);
+    let mut config = config.write().await;
+    let removed = config.0.get_mut(&guild_id).unwrap().dictionary.remove(key);
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)

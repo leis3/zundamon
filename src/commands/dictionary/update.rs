@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::DictData;
+use crate::ConfigData;
 use crate::dictionary::DictionaryItem;
 use serenity::prelude::*;
 use serenity::Result;
@@ -34,12 +34,14 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
     
     let item = DictionaryItem { key, value, is_regex, priority };
 
-    let dict = {
+    let guild_id = interaction.guild_id.unwrap();
+
+    let config = {
         let data_read = ctx.data.read().await;
-        data_read.get::<DictData>().expect("Expected DictData in TypeMap.").clone()
+        data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
     };
-    let mut dict = dict.write().await;
-    let updated = dict.update(item);
+    let mut config = config.write().await;
+    let updated = config.0.get_mut(&guild_id).unwrap().dictionary.update(item);
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)

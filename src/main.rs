@@ -1,12 +1,13 @@
 mod synthesis;
 mod commands;
 mod dictionary;
+mod config;
 
-use chrono::Timelike;
-use dictionary::Dictionary;
+use config::Config;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
+use chrono::Timelike;
 use tokio::sync::RwLock;
 use songbird::SerenityInit;
 use serenity::{
@@ -26,10 +27,10 @@ impl TypeMapKey for TextChannelId {
     type Value = Arc<RwLock<HashMap<GuildId, ChannelId>>>;
 }
 
-pub struct DictData;
+pub struct ConfigData;
 
-impl TypeMapKey for DictData {
-    type Value = Arc<RwLock<Dictionary>>;
+impl TypeMapKey for ConfigData {
+    type Value = Arc<RwLock<Config>>;
 }
 
 #[derive(Debug, Default)]
@@ -69,6 +70,13 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::skip::register(cmd))
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
             }).await.unwrap();
+
+            let data_read = {
+                let data_read = ctx.data.read().await;
+                data_read.get::<ConfigData>().unwrap().clone()
+            };
+            let mut data_lock = data_read.write().await;
+            data_lock.load(guild.id);
         }
     }
 
@@ -216,7 +224,7 @@ async fn main() {
     {
         let mut data = client.data.write().await;
         data.insert::<TextChannelId>(Arc::new(RwLock::new(HashMap::default())));
-        data.insert::<DictData>(Arc::new(RwLock::new(Dictionary::new())));
+        data.insert::<ConfigData>(Arc::new(RwLock::new(Config::default())));
     }
 
     tokio::spawn(async move {
