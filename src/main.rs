@@ -177,7 +177,17 @@ impl EventHandler for Handler {
                 text.push_str("添付ファイル ");
             }
 
-            text.push_str(&msg.content);
+            let data_read = {
+                let data_read = ctx.data.read().await;
+                data_read.get::<ConfigData>().unwrap().clone()
+            };
+            let content = data_read.read().await.0
+                .get(&msg.guild_id.unwrap())
+                .unwrap()
+                .dictionary
+                .apply(&msg.content);
+
+            text.push_str(&content);
 
             // 長文は省略
             if text.chars().count() > MAX_TEXT_LEN {

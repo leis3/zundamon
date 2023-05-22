@@ -21,7 +21,6 @@ pub struct DictionaryItem {
 }
 
 impl Dictionary {
-
     pub fn load(guild_id: GuildId) -> Result<Self> {
         let path = Path::new(CONFIG_DIR).join(CONFIG_FILE).join(guild_id.0.to_string());
         let content = std::fs::read_to_string(path)?;
