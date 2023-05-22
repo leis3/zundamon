@@ -194,7 +194,9 @@ impl EventHandler for Handler {
                 text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
             }
 
-            synthesis::synthesis(&text).unwrap();
+            if synthesis::synthesis(&text).is_err() {
+                return;
+            }
 
             duct::cmd!("ffmpeg", "-i", "temp.wav", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
                 .stdout_null()
