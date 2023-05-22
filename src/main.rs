@@ -59,6 +59,12 @@ impl EventHandler for Handler {
             },
             _ => {}
         }
+
+        let data_read = {
+            let data_read = ctx.data.read().await;
+            data_read.get::<ConfigData>().unwrap().clone()
+        };
+        data_read.read().await.save();
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
