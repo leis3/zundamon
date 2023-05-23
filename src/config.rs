@@ -13,7 +13,8 @@ pub struct Config(pub HashMap<GuildId, GuildConfig>);
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct GuildConfig {
-    pub dictionary: Dictionary
+    pub dictionary: Dictionary,
+    pub time_signal: bool
 }
 
 impl Config {

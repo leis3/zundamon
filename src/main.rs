@@ -51,6 +51,7 @@ impl EventHandler for Handler {
                     "version" => commands::version::run(options, &ctx, &command).await,
                     "skip" => commands::skip::run(options, &ctx, &command).await,
                     "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
+                    "time-signal" => commands::time_signal::run(options, &ctx, &command).await,
                     _ => unimplemented!()
                 } {
                     println!("Cannot respond to slash command: {why}");
@@ -76,6 +77,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::version::register(cmd))
                     .create_application_command(|cmd| commands::skip::register(cmd))
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
+                    .create_application_command(|cmd| commands::time_signal::register(cmd))
             }).await.unwrap();
 
             {
