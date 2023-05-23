@@ -36,12 +36,12 @@ async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &A
             let Ok(new_dict) = response.json::<Dictionary>().await else {
                 return Err("無効なJSONデータです。");
             };
-            let config = {
+            {
                 let data_read = ctx.data.read().await;
-                data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
-            };
-            let mut dict = config.write().await;
-            dict.0.get_mut(&guild_id).unwrap().dictionary.import(&new_dict, overwrite);
+                let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
+                let mut config_lock = config.lock().unwrap();
+                config_lock.0.get_mut(&guild_id).unwrap().dictionary.import(&new_dict, overwrite)
+            }
             Ok("辞書をインポートしました。")
         },
         _ => unreachable!("unsupported file format")

@@ -18,12 +18,12 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
 
     let guild_id = interaction.guild_id.unwrap();
 
-    let config = {
+    let removed = {
         let data_read = ctx.data.read().await;
-        data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
+        let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
+        let mut config_lock = config.lock().unwrap();
+        config_lock.0.get_mut(&guild_id).unwrap().dictionary.remove(key)
     };
-    let mut config = config.write().await;
-    let removed = config.0.get_mut(&guild_id).unwrap().dictionary.remove(key);
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)

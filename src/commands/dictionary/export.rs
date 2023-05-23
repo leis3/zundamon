@@ -20,13 +20,13 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
 
     match format.as_str() {
         "JSON" => {
-            let config = {
+            let data = {
                 let data_read = ctx.data.read().await;
-                data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
+                let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
+                let config_lock = config.lock().unwrap();
+                let dict = &config_lock.0.get(&guild_id).unwrap().dictionary;
+                serde_json::to_string_pretty(dict).unwrap()
             };
-            let config = config.read().await;
-            let dict = &config.0.get(&guild_id).unwrap().dictionary;
-            let data = serde_json::to_string_pretty(dict).unwrap();
 
             interaction.create_interaction_response(&ctx.http, |response| {
                 response.kind(InteractionResponseType::ChannelMessageWithSource)

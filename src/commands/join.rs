@@ -25,15 +25,13 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     }
 
     // メッセージを読むテキストチャンネルを設定する
-    let data_lock = {
-        let data_read = ctx.data.read().await;
-        data_read.get::<TextChannelId>().unwrap().clone()
-    };
-    
     {
-        let mut data = data_lock.write().await;
-        data.insert(guild_id, interaction.channel_id);
+        let data_read = ctx.data.read().await;
+        let channel_id = data_read.get::<TextChannelId>().unwrap();
+        let mut lock = channel_id.lock().unwrap();
+        lock.insert(guild_id, interaction.channel_id);
     }
+    
 
     Ok("接続しました。")
 }

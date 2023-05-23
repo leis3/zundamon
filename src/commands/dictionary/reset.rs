@@ -45,12 +45,12 @@ pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &Ap
             "リセットをキャンセルしました。"
         },
         "reset_do" => {
-            let config = {
+            {
                 let data_read = ctx.data.read().await;
-                data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.").clone()
-            };
-            let mut config = config.write().await;
-            config.0.get_mut(&guild_id).unwrap().dictionary.reset();
+                let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
+                let mut config_lock = config.lock().unwrap();
+                config_lock.0.get_mut(&guild_id).unwrap().dictionary.reset();
+            }
             "辞書をリセットしました。"
         },
         _ => unreachable!()

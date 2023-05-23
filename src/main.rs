@@ -4,11 +4,10 @@ mod dictionary;
 mod config;
 
 use config::Config;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
 use chrono::Timelike;
-use tokio::sync::RwLock;
 use songbird::SerenityInit;
 use serenity::{
     async_trait,
@@ -26,13 +25,13 @@ const MAX_TEXT_LEN: usize = 255;
 pub struct TextChannelId;
 
 impl TypeMapKey for TextChannelId {
-    type Value = Arc<RwLock<HashMap<GuildId, ChannelId>>>;
+    type Value = Arc<Mutex<HashMap<GuildId, ChannelId>>>;
 }
 
 pub struct ConfigData;
 
 impl TypeMapKey for ConfigData {
-    type Value = Arc<RwLock<Config>>;
+    type Value = Arc<Mutex<Config>>;
 }
 
 #[derive(Debug, Default)]
@@ -60,11 +59,11 @@ impl EventHandler for Handler {
             _ => {}
         }
 
-        let data_read = {
+        {
             let data_read = ctx.data.read().await;
-            data_read.get::<ConfigData>().unwrap().clone()
-        };
-        data_read.read().await.save();
+            let config = data_read.get::<ConfigData>().unwrap();
+            config.lock().unwrap().save();
+        }
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
@@ -79,12 +78,11 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
             }).await.unwrap();
 
-            let data_read = {
+            {
                 let data_read = ctx.data.read().await;
-                data_read.get::<ConfigData>().unwrap().clone()
-            };
-            let mut data_lock = data_read.write().await;
-            data_lock.load(guild.id);
+                let config = data_read.get::<ConfigData>().unwrap();
+                config.lock().unwrap().load(guild.id);
+            }
         }
     }
 
@@ -156,12 +154,10 @@ impl EventHandler for Handler {
 
         // 読み上げるテキストチャンネルを取得
         let Some(text_channel) = ({
-            let data_read = {
-                let data_read = ctx.data.read().await;
-                data_read.get::<TextChannelId>().unwrap().clone()
-            };
-            let data_lock = data_read.read().await;
-            data_lock.get(&guild.id).cloned()
+            let data_read = ctx.data.read().await;
+            let channel_id = data_read.get::<TextChannelId>().unwrap();
+            let text_channel = channel_id.lock().unwrap().get(&guild.id).cloned();
+            text_channel
         }) else { return; };
 
         // 自身がVCにいるときのみ読み上げる
@@ -177,15 +173,12 @@ impl EventHandler for Handler {
                 text.push_str("添付ファイル ");
             }
 
-            let data_read = {
+            let content = {
                 let data_read = ctx.data.read().await;
-                data_read.get::<ConfigData>().unwrap().clone()
+                let config = data_read.get::<ConfigData>().unwrap();
+                let config_lock = config.lock().unwrap();
+                config_lock.0.get(&guild.id).unwrap().dictionary.apply(&msg.content)
             };
-            let content = data_read.read().await.0
-                .get(&msg.guild_id.unwrap())
-                .unwrap()
-                .dictionary
-                .apply(&msg.content);
 
             text.push_str(&content);
 
@@ -248,8 +241,8 @@ async fn main() {
 
     {
         let mut data = client.data.write().await;
-        data.insert::<TextChannelId>(Arc::new(RwLock::new(HashMap::default())));
-        data.insert::<ConfigData>(Arc::new(RwLock::new(Config::default())));
+        data.insert::<TextChannelId>(Arc::new(Mutex::new(HashMap::default())));
+        data.insert::<ConfigData>(Arc::new(Mutex::new(Config::default())));
     }
 
     tokio::spawn(async move {
