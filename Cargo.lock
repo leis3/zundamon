@@ -2382,6 +2382,7 @@ dependencies = [
  "chrono",
  "duct",
  "hound",
+ "once_cell",
  "regex",
  "reqwest",
  "serde",
