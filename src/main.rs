@@ -144,15 +144,14 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        let start = std::time::Instant::now();
-
         let self_id = ctx.cache.current_user_id();
-        let guild = msg.guild(&ctx.cache).unwrap();
 
         // 自身のメッセージは無視
         if msg.author.id == self_id {
             return;
         }
+
+        let guild = msg.guild(&ctx.cache).unwrap();
 
         // 読み上げるテキストチャンネルを取得
         let Some(text_channel) = ({
@@ -207,8 +206,6 @@ impl EventHandler for Handler {
                 let source = songbird::ffmpeg("sound.wav").await.unwrap();
 
                 let (track, _handle) = songbird::tracks::create_player(source);
-
-                println!("{} ms", start.elapsed().as_millis());
 
                 handler.enqueue(track);
             } else {
