@@ -56,8 +56,8 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
                     embed.title(title)
                         .color(Color::from_rgb(0x66, 0xbb, 0x6a))
                         .fields([
-                            ("単語", format!("`{}`", item.key), false),
-                            ("読み", format!("`{}`", item.value), false)
+                            ("単語", format!("```{}```", item.key), false),
+                            ("読み", format!("```{}```", item.value), false)
                         ])
                 })
             })
