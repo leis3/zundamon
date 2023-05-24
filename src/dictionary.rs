@@ -6,13 +6,16 @@ use serenity::model::prelude::GuildId;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Dictionary {
+    #[serde(rename = "data")]
     pub items: Vec<DictionaryItem>
 }
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DictionaryItem {
+    #[serde(rename = "word")]
     pub key: String,
+    #[serde(rename = "reading")]
     pub value: String,
     /// 正規表現かどうか
     pub is_regex: bool,
