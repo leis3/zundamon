@@ -192,7 +192,7 @@ impl EventHandler for Handler {
                 return;
             }
 
-            duct::cmd!("ffmpeg", "-i", "temp.wav", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
+            duct::cmd!("ffmpeg", "-i", "temp.wav", "-af", "atempo=1.2", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
                 .stdout_null()
                 .stderr_null()
                 .run()
