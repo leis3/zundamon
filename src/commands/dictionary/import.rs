@@ -17,15 +17,18 @@ async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &A
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
 
-    let CommandDataOptionValue::Attachment(attachment) = map["attachment"] else { panic!() };
+    let CommandDataOptionValue::Attachment(file) = map["file"] else { panic!() };
 
-    let format = attachment.filename.as_str();
+    let path = std::path::Path::new(&file.filename);
+    let Some(format) = path.extension().map(|f| f.to_str()).flatten() else {
+        return Err("ファイル形式が不明です。適切な拡張子を付けて再度実行してください。");
+    };
     if !["json"].contains(&format) {
         return Err("サポートされていないファイル形式です。");
     }
     let CommandDataOptionValue::Boolean(overwrite) = *map["overwrite"] else { panic!() };
 
-    let Ok(response) = reqwest::get(&attachment.url).await else {
+    let Ok(response) = reqwest::get(&file.url).await else {
         return Err("ファイルの取得に失敗しました。");
     };
 
