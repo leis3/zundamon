@@ -53,6 +53,7 @@ impl EventHandler for Handler {
                     "skip" => commands::skip::run(options, &ctx, &command).await,
                     "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
                     "time-signal" => commands::time_signal::run(options, &ctx, &command).await,
+                    "autojoin" => commands::autojoin::run(options, &ctx, &command).await,
                     _ => unimplemented!()
                 } {
                     println!("Cannot respond to slash command: {why}");
@@ -79,6 +80,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::skip::register(cmd))
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
                     .create_application_command(|cmd| commands::time_signal::register(cmd))
+                    .create_application_command(|cmd| commands::autojoin::register(cmd))
             }).await.unwrap();
 
             {
@@ -255,11 +257,29 @@ impl EventHandler for Handler {
     }
 
     /// 非botのユーザーが全員VCを抜けたら自動的に切断する
-    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, _new: VoiceState) {
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
+        // 自動入室
+        let Some(guild_id) = new.guild_id else { return; };
+        let autojoin = {
+            let data_read = ctx.data.read().await;
+            let config = data_read.get::<ConfigData>().unwrap();
+            let config_lock = config.lock().unwrap();
+            config_lock.0.get(&guild_id).unwrap().autojoin
+        };
+        if autojoin && old.is_none() {
+            if let Some(connect_to) = new.channel_id {
+                let manager = songbird::get(&ctx).await.unwrap();
+                let _ = manager.join(guild_id, connect_to).await;
+            }
+        }
+
         let Some(old) = old else { return; };
+
         let Some(channel_id) = old.channel_id else { return; };
         let Ok(Channel::Guild(channel)) = channel_id.to_channel(&ctx.http).await else { return; };
+
         let Ok(members) = channel.members(&ctx.cache).await else { return; };
+        
         if members.is_empty() || members.iter().all(|member| member.user.bot) {
             let Some(guild_id) = old.guild_id else { return; };
             let manager = songbird::get(&ctx).await.unwrap();

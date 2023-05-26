@@ -11,10 +11,12 @@ pub const CONFIG_FILE: &str = "config.json";
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config(pub HashMap<GuildId, GuildConfig>);
 
+#[non_exhaustive]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct GuildConfig {
     pub dictionary: Dictionary,
-    pub time_signal: bool
+    pub time_signal: bool,
+    pub autojoin: bool
 }
 
 impl Config {
