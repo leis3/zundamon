@@ -29,7 +29,7 @@ pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &App
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {
-                message.content(if enable {"時報機能を有効にしました。"} else {"時報機能を無効にしました。"})
+                message.content(if enable {"時報を有効にしました。"} else {"時報を無効にしました。"})
             })
     }).await
 }
