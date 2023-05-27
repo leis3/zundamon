@@ -33,7 +33,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     }
     
 
-    Ok("接続しました。")
+    Ok(format!("<#{connect_to}>に接続しました。"))
 }
 
 pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
