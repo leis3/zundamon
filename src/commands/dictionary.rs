@@ -5,23 +5,22 @@ mod reset;
 mod export;
 mod import;
 
-use serenity::Result;
 use serenity::prelude::*;
+use serenity::Result;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::command::CommandOptionType;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 
-pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
-    let option = &options[0];
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+    let option = &interaction.data.options[0];
 
     match option.name.as_str() {
-        "add" => add::run(&option.options, ctx, interaction).await,
-        "remove" => remove::run(&option.options, ctx, interaction).await,
-        "update" => update::run(&option.options, ctx, interaction).await,
-        "reset" => reset::run(&option.options, ctx, interaction).await,
-        "export" => export::run(&option.options, ctx, interaction).await,
-        "import" => import::run(&option.options, ctx, interaction).await,
+        "add" => add::run(ctx, interaction).await,
+        "remove" => remove::run(ctx, interaction).await,
+        "update" => update::run( ctx, interaction).await,
+        "reset" => reset::run(ctx, interaction).await,
+        "export" => export::run(ctx, interaction).await,
+        "import" => import::run(ctx, interaction).await,
         _ => panic!("unexpected subcommand name")
     }
 }

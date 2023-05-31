@@ -5,14 +5,11 @@ use serenity::model::application::{
     component::ButtonStyle,
     interaction::{
         InteractionResponseType,
-        application_command::{
-            CommandDataOption,
-            ApplicationCommandInteraction
-        }
+        application_command::ApplicationCommandInteraction
     }
 };
 
-pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {

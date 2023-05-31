@@ -45,15 +45,14 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         match interaction {
             Interaction::ApplicationCommand(command) => {
-                let options = &command.data.options;
                 if let Err(why) = match command.data.name.as_str() {
-                    "join" => commands::join::run(options, &ctx, &command).await,
-                    "leave" => commands::leave::run(options, &ctx, &command).await,
-                    "version" => commands::version::run(options, &ctx, &command).await,
-                    "skip" => commands::skip::run(options, &ctx, &command).await,
-                    "dictionary" => commands::dictionary::run(options, &ctx, &command).await,
-                    "time-signal" => commands::time_signal::run(options, &ctx, &command).await,
-                    "autojoin" => commands::autojoin::run(options, &ctx, &command).await,
+                    "join" => commands::join::run(&ctx, &command).await,
+                    "leave" => commands::leave::run(&ctx, &command).await,
+                    "version" => commands::version::run(&ctx, &command).await,
+                    "skip" => commands::skip::run(&ctx, &command).await,
+                    "dictionary" => commands::dictionary::run(&ctx, &command).await,
+                    "time-signal" => commands::time_signal::run(&ctx, &command).await,
+                    "autojoin" => commands::autojoin::run(&ctx, &command).await,
                     _ => unimplemented!()
                 } {
                     println!("Cannot respond to slash command: {why}");

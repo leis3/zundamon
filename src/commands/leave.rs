@@ -1,13 +1,12 @@
 use serenity::Result;
-use serenity::builder::CreateApplicationCommand;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::prelude::*;
+use serenity::builder::CreateApplicationCommand;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::ApplicationCommandInteraction
 };
 
-pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     let guild_id = interaction.guild_id.unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();

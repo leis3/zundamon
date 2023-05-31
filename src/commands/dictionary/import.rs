@@ -6,13 +6,13 @@ use serenity::utils::Color;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::{
-        CommandDataOption,
         CommandDataOptionValue,
         ApplicationCommandInteraction
     }
 };
 
-async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
+async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
+    let options = &interaction.data.options;
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
@@ -51,8 +51,8 @@ async fn run_inner(options: &[CommandDataOption], ctx: &Context, interaction: &A
     }
 }
 
-pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
-    let msg = run_inner(_options, ctx, interaction).await;
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
+    let msg = run_inner(ctx, interaction).await;
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {

@@ -1,7 +1,6 @@
 use crate::TextChannelId;
-use serenity::builder::CreateApplicationCommand;
-use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use serenity::prelude::*;
+use serenity::builder::CreateApplicationCommand;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::ApplicationCommandInteraction
@@ -36,7 +35,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     Ok(format!("<#{connect_to}>に接続しました。"))
 }
 
-pub async fn run(_options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> serenity::Result<()> {
     let msg = run_inner(ctx, interaction).await;
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)

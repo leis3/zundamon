@@ -6,13 +6,13 @@ use serenity::Result;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::{
-        CommandDataOption,
         CommandDataOptionValue,
         ApplicationCommandInteraction
     }
 };
 
-pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+    let options = &interaction.data.options;
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();

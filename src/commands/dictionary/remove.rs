@@ -5,13 +5,13 @@ use serenity::utils::Color;
 use serenity::model::application::interaction::{
     InteractionResponseType,
     application_command::{
-        CommandDataOption,
         CommandDataOptionValue,
         ApplicationCommandInteraction
     }
 };
 
-pub async fn run(options: &[CommandDataOption], ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+    let options = &interaction.data.options;
     let CommandDataOptionValue::String(key) = options[0].resolved.as_ref().unwrap() else {
         panic!()
     };
