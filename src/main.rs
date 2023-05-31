@@ -190,7 +190,7 @@ impl EventHandler for Handler {
                 text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
             }
 
-            let Ok(data) = synthesis::synthesis(&text)  else {
+            let Ok(data) = synthesis::synthesis(&text) else {
                 return;
             };
 
@@ -227,8 +227,9 @@ impl EventHandler for Handler {
                     .expect("Failed to spawn process");
 
                 let mut stdin = command.stdin.take().expect("Failed to open stdin");
-                stdin.write_all(&data).expect("Failed to write to stdin");  
-                stdin.flush().unwrap();
+                std::thread::spawn(move || {
+                    stdin.write_all(&data).expect("Failed to write to stdin");  
+                });
 
                 songbird::input::Input::new(
                     true,
@@ -243,12 +244,7 @@ impl EventHandler for Handler {
 
             if let Some(handle) = manager.get(guild.id) {
                 let mut handler = handle.lock().await;
-
-                //let source = songbird::ffmpeg("sound.wav").await.unwrap();
-
-                let (track, _handle) = songbird::tracks::create_player(input);
-
-                handler.enqueue(track);
+                handler.enqueue_source(input);
             } else {
                 panic!();
             }
