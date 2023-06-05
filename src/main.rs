@@ -4,7 +4,6 @@ mod dictionary;
 mod config;
 
 use config::Config;
-use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
@@ -113,23 +112,17 @@ impl EventHandler for Handler {
                                         if local_hour < 12 {"午前"} else {"午後"},
                                         local_hour % 12
                                     );
-                                    synthesis::synthesis(&text).unwrap();
-                                    duct::cmd!("ffmpeg", "-i", "temp.wav", "-ac", "2", "-ar", "48000", "sound.wav", "-y")
-                                        .stdout_null()
-                                        .stderr_null()
-                                        .run()
-                                        .unwrap();
     
                                     let manager = songbird::get(&ctx).await.unwrap();
     
                                     if let Some(handle) = manager.get(guild) {
                                         let mut handler = handle.lock().await;
-                        
-                                        let source = songbird::ffmpeg("sound.wav").await.unwrap();
-                        
-                                        let (track, _handle) = songbird::tracks::create_player(source);
-                        
-                                        handler.enqueue(track);
+
+                                        let data = synthesis::synthesis(&text).unwrap();
+
+                                        let input = synthesis::ffmpeg(&data);
+
+                                        handler.enqueue_source(input);
                                     } else {
                                         panic!();
                                     }
@@ -190,60 +183,17 @@ impl EventHandler for Handler {
                 text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
             }
 
-            let Ok(data) = synthesis::synthesis(&text) else {
-                return;
-            };
-
-            let input = {
-                let rdr = hound::WavReader::new(data.as_slice()).unwrap();
-                let duration = rdr.duration() as f64 / 24000.;
-                let metadata = songbird::input::Metadata {
-                    channels: Some(1),
-                    duration: Some(std::time::Duration::from_secs_f64(duration)),
-                    sample_rate: Some(24000),
-                    ..Default::default()
-                };
-                let args = [
-                    "-i",
-                    "-",
-                    "-f",
-                    "s16le",
-                    "-af",
-                    "atempo=1.2",
-                    "-ac",
-                    "2",
-                    "-ar",
-                    "48000",
-                    "-acodec",
-                    "pcm_f32le",
-                    "-"
-                ];
-                let mut command = std::process::Command::new("ffmpeg")
-                    .args(&args)
-                    .stderr(std::process::Stdio::null())
-                    .stdin(std::process::Stdio::piped())
-                    .stdout(std::process::Stdio::piped())
-                    .spawn()
-                    .expect("Failed to spawn process");
-
-                let mut stdin = command.stdin.take().expect("Failed to open stdin");
-                std::thread::spawn(move || {
-                    stdin.write_all(&data).expect("Failed to write to stdin");  
-                });
-
-                songbird::input::Input::new(
-                    true,
-                    songbird::input::children_to_reader::<f32>(vec![command]),
-                    songbird::input::Codec::FloatPcm,
-                    songbird::input::Container::Raw,
-                    Some(metadata)
-                )
-            };
-
             let manager = songbird::get(&ctx).await.unwrap();
 
             if let Some(handle) = manager.get(guild.id) {
                 let mut handler = handle.lock().await;
+
+                let Ok(data) = synthesis::synthesis(&text) else {
+                    return;
+                };
+
+                let input = synthesis::ffmpeg(&data);
+
                 handler.enqueue_source(input);
             } else {
                 panic!();
