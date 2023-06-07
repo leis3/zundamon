@@ -215,9 +215,16 @@ impl EventHandler for Handler {
             if let Some(connect_to) = new.channel_id {
                 let manager = songbird::get(&ctx).await.unwrap();
                 let _ = manager.join(guild_id, connect_to).await;
+                {
+                    let data_read = ctx.data.read().await;
+                    let channel_id = data_read.get::<TextChannelId>().unwrap();
+                    let mut lock = channel_id.lock().unwrap();
+                    lock.insert(guild_id, connect_to);
+                }
             }
         }
 
+        // 自動退室
         let Some(old) = old else { return; };
 
         let Some(channel_id) = old.channel_id else { return; };
