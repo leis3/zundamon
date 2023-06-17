@@ -20,7 +20,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     let CommandDataOptionValue::Attachment(file) = map["file"] else { panic!() };
 
     let path = std::path::Path::new(&file.filename);
-    let Some(format) = path.extension().map(|f| f.to_str()).flatten() else {
+    let Some(format) = path.extension().and_then(|f| f.to_str()) else {
         return Err("ファイル形式が不明です。適切な拡張子を付けて再度実行してください。");
     };
     if !["json"].contains(&format) {

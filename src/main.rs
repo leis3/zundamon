@@ -41,6 +41,7 @@ struct Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
+    #[allow(clippy::single_match)]
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         match interaction {
             Interaction::ApplicationCommand(command) => {

@@ -57,7 +57,7 @@ pub fn ffmpeg(data: &[u8]) -> Input {
     ];
 
     let mut command = std::process::Command::new("ffmpeg")
-        .args(&args)
+        .args(args)
         .stderr(std::process::Stdio::null())
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())

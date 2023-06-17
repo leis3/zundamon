@@ -71,18 +71,16 @@ impl Config {
     }
 
     pub fn guild_config(&mut self, guild_id: GuildId) -> &GuildConfig {
-        if !self.0.contains_key(&guild_id) {
-            let guild_config = GuildConfig::load(guild_id).unwrap();
-            self.0.insert(guild_id, guild_config);
-        }
+        self.0.entry(guild_id).or_insert_with(|| {
+            GuildConfig::load(guild_id).unwrap()
+        });
         self.0.get(&guild_id).unwrap()
     }
 
     pub fn guild_config_mut(&mut self, guild_id: GuildId) -> &mut GuildConfig {
-        if !self.0.contains_key(&guild_id) {
-            let guild_config = GuildConfig::load(guild_id).unwrap();
-            self.0.insert(guild_id, guild_config);
-        }
+        self.0.entry(guild_id).or_insert_with(|| {
+            GuildConfig::load(guild_id).unwrap()
+        });
         self.0.get_mut(&guild_id).unwrap()
     }
 }
