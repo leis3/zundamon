@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+aho-corasick = "1.0.2"
+anyhow = "1.0.71"
 chrono = { version = "0.4.24", default-features = false, features = ["clock"] }
 duct = "0.13.6"
 hound = "3.5.0"

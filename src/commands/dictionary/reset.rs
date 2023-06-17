@@ -46,9 +46,13 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
                 let mut config_lock = config.lock().unwrap();
-                config_lock.0.get_mut(&guild_id).unwrap().dictionary.reset();
+                let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
+                if dict.reset().is_ok() {
+                    "辞書をリセットしました。"
+                } else {
+                    "辞書のリセットに失敗しました。"
+                }
             }
-            "辞書をリセットしました。"
         },
         _ => unreachable!()
     };

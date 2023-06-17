@@ -23,7 +23,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         let data_read = ctx.data.read().await;
         let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
         let mut config_lock = config.lock().unwrap();
-        config_lock.0.get_mut(&guild_id).unwrap().time_signal = enable;
+        let time_signal = &mut config_lock.guild_config_mut(guild_id).time_signal;
+        *time_signal = enable;
     }
 
     interaction.create_interaction_response(&ctx.http, |response| {

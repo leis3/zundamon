@@ -11,7 +11,7 @@ use serenity::model::application::interaction::{
 };
 
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
-    let options = &interaction.data.options;
+    let options = &interaction.data.options[0].options;
     let CommandDataOptionValue::String(format) = options[0].resolved.as_ref().unwrap() else {
         panic!()
     };
@@ -23,8 +23,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
             let data = {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-                let config_lock = config.lock().unwrap();
-                let dict = &config_lock.0.get(&guild_id).unwrap().dictionary;
+                let mut config_lock = config.lock().unwrap();
+                let dict = &config_lock.guild_config(guild_id).dictionary;
                 serde_json::to_string_pretty(dict).unwrap()
             };
 

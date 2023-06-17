@@ -63,7 +63,7 @@ impl EventHandler for Handler {
         {
             let data_read = ctx.data.read().await;
             let config = data_read.get::<ConfigData>().unwrap();
-            config.lock().unwrap().save();
+            let _ = config.lock().unwrap().save();
         }
     }
 
@@ -84,7 +84,7 @@ impl EventHandler for Handler {
             {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().unwrap();
-                config.lock().unwrap().load(guild.id);
+                let _ = config.lock().unwrap().reload();
             }
         }
     }
@@ -172,8 +172,9 @@ impl EventHandler for Handler {
             let content = {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().unwrap();
-                let config_lock = config.lock().unwrap();
-                config_lock.0.get(&guild.id).unwrap().dictionary.apply(&msg.content)
+                let mut config_lock = config.lock().unwrap();
+                let dict = &config_lock.guild_config(guild.id).dictionary;
+                dict.apply(&msg.content).unwrap_or(msg.content.clone())
             };
 
             text.push_str(&content);
@@ -208,8 +209,8 @@ impl EventHandler for Handler {
         let autojoin = {
             let data_read = ctx.data.read().await;
             let config = data_read.get::<ConfigData>().unwrap();
-            let config_lock = config.lock().unwrap();
-            config_lock.0.get(&guild_id).unwrap().autojoin
+            let mut config_lock = config.lock().unwrap();
+            config_lock.guild_config(guild_id).autojoin
         };
         if autojoin && old.is_none() {
             if let Some(connect_to) = new.channel_id {
@@ -253,7 +254,7 @@ async fn main() {
     {
         let mut data = client.data.write().await;
         data.insert::<TextChannelId>(Arc::new(Mutex::new(HashMap::default())));
-        data.insert::<ConfigData>(Arc::new(Mutex::new(Config::default())));
+        data.insert::<ConfigData>(Arc::new(Mutex::new(Config::load().unwrap_or_default())));
     }
 
     tokio::spawn(async move {

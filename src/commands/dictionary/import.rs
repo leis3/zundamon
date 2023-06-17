@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::ConfigData;
-use crate::dictionary::Dictionary;
+use crate::dictionary::DictItem;
 use serenity::prelude::*;
 use serenity::utils::Color;
 use serenity::model::application::interaction::{
@@ -12,7 +12,7 @@ use serenity::model::application::interaction::{
 };
 
 async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
-    let options = &interaction.data.options;
+    let options = &interaction.data.options[0].options;
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
@@ -26,7 +26,6 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     if !["json"].contains(&format) {
         return Err("サポートされていないファイル形式です。");
     }
-    let CommandDataOptionValue::Boolean(overwrite) = *map["overwrite"] else { panic!() };
 
     let Ok(response) = reqwest::get(&file.url).await else {
         return Err("ファイルの取得に失敗しました。");
@@ -36,14 +35,17 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
 
     match format {
         "json" => {
-            let Ok(new_dict) = response.json::<Dictionary>().await else {
+            let Ok(items) = response.json::<Vec<DictItem>>().await else {
                 return Err("無効なJSONデータです。");
             };
             {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
                 let mut config_lock = config.lock().unwrap();
-                config_lock.0.get_mut(&guild_id).unwrap().dictionary.import(&new_dict, overwrite)
+                let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
+                for item in items {
+                    let _ = dict.add(item);
+                }
             }
             Ok("辞書をインポートしました。")
         },

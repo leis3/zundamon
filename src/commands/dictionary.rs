@@ -1,6 +1,5 @@
 mod add;
 mod remove;
-mod update;
 mod reset;
 mod export;
 mod import;
@@ -17,7 +16,6 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     match option.name.as_str() {
         "add" => add::run(ctx, interaction).await,
         "remove" => remove::run(ctx, interaction).await,
-        "update" => update::run( ctx, interaction).await,
         "reset" => reset::run(ctx, interaction).await,
         "export" => export::run(ctx, interaction).await,
         "import" => import::run(ctx, interaction).await,
@@ -49,13 +47,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                         .kind(CommandOptionType::Boolean)
                         .description("正規表現として登録する場合はTrue")
                 })
-                .create_sub_option(|option| {
-                    option.name("優先度")
-                        .kind(CommandOptionType::Integer)
-                        .min_int_value(0)
-                        .max_int_value(255)
-                        .description("辞書変換を適用する優先度(数値が高いほど優先度が高い)")
-                })
         })
         .create_option(|option| {
             option.name("remove")
@@ -66,34 +57,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                         .kind(CommandOptionType::String)
                         .required(true)
                         .description("辞書から削除する単語")
-                })
-        })
-        .create_option(|option| {
-            option.name("update")
-                .description("辞書に登録されている単語を更新します。")
-                .kind(CommandOptionType::SubCommand)
-                .create_sub_option(|option| {
-                    option.name("単語")
-                        .description("辞書に登録されている単語")
-                        .kind(CommandOptionType::String)
-                        .required(true)
-                })
-                .create_sub_option(|option| {
-                    option.name("読み")
-                        .kind(CommandOptionType::String)
-                        .description("辞書に登録する単語の読み方")
-                })
-                .create_sub_option(|option| {
-                    option.name("正規表現")
-                        .kind(CommandOptionType::Boolean)
-                        .description("正規表現として登録する場合はTrue")
-                })
-                .create_sub_option(|option| {
-                    option.name("優先度")
-                        .kind(CommandOptionType::Integer)
-                        .min_int_value(0)
-                        .max_int_value(255)
-                        .description("辞書変換を適用する優先度(数値が高いほど優先度が高い)")
                 })
         })
         .create_option(|option| {
@@ -122,11 +85,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                         .description("インポートするファイル")
                         .kind(CommandOptionType::Attachment)
                         .required(true)
-                })
-                .create_sub_option(|option| {
-                    option.name("overwrite")
-                        .description("既に登録されている単語を上書きする場合はTrue")
-                        .kind(CommandOptionType::Boolean)
                 })
         })
 }
