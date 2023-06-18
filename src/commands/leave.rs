@@ -17,9 +17,10 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {
                 let msg = if success {
-                    "切断に失敗しました。"
-                } else {
                     "切断しました。"
+                } else {
+                    
+                    "切断に失敗しました。"
                 };
                 message.ephemeral(!success).content(msg)
             })
