@@ -14,7 +14,6 @@ use serenity::model::application::interaction::{
 
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     let options = &interaction.data.options[0].options;
-    println!("options: {options:?}");
     let map = options.iter().map(|option| {
         (option.name.as_str(), option.resolved.as_ref().unwrap())
     }).collect::<HashMap<_, _>>();
