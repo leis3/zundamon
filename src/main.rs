@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
 use chrono::Timelike;
+use anyhow::Result;
 use songbird::SerenityInit;
 use serenity::{
     async_trait,
@@ -113,20 +114,7 @@ impl EventHandler for Handler {
                                         if local_hour < 12 {"午前"} else {"午後"},
                                         local_hour % 12
                                     );
-    
-                                    let manager = songbird::get(&ctx).await.unwrap();
-    
-                                    if let Some(handle) = manager.get(guild) {
-                                        let mut handler = handle.lock().await;
-
-                                        let data = synthesis::synthesis(&text).unwrap();
-
-                                        let input = synthesis::ffmpeg(&data);
-
-                                        handler.enqueue_source(input);
-                                    } else {
-                                        panic!();
-                                    }
+                                    let _ = speak(&ctx, guild, &text).await;
                                 });
                             }
                         }
@@ -185,21 +173,7 @@ impl EventHandler for Handler {
                 text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
             }
 
-            let manager = songbird::get(&ctx).await.unwrap();
-
-            if let Some(handle) = manager.get(guild.id) {
-                let mut handler = handle.lock().await;
-
-                let Ok(data) = synthesis::synthesis(&text) else {
-                    return;
-                };
-
-                let input = synthesis::ffmpeg(&data);
-
-                handler.enqueue_source(input);
-            } else {
-                panic!();
-            }
+            let _ = speak(&ctx, guild.id, &text).await;
         }
     }
 
@@ -240,6 +214,23 @@ impl EventHandler for Handler {
             let _ = manager.leave(guild_id).await;
         }
     }
+}
+
+async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
+    let Some(manager) = songbird::get(ctx).await else {
+        anyhow::bail!("Failed to retrieve Songbird voice client");
+    };
+    let Some(handle) = manager.get(guild_id) else {
+        anyhow::bail!("Failed to retrieve Call handler");
+    };
+    let Ok(data) = synthesis::synthesis(text) else {
+        anyhow::bail!("Failed to synthesis");
+    };
+    let input = synthesis::ffmpeg(&data);
+    let mut handler = handle.lock().await;
+    handler.enqueue_source(input);
+
+    Ok(())
 }
 
 #[tokio::main]
