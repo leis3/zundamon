@@ -160,7 +160,7 @@ impl Dictionary {
     }
 
     pub fn apply(&self, text: &str) -> Result<String> {
-        let mut text = text.to_owned();
+        let mut text = text.to_ascii_lowercase();
 
         for item in &self.regex_items {
             let re = regex::Regex::new(&item.key)?;
@@ -191,7 +191,6 @@ impl Dictionary {
             self.items.push(item);
             self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
         }
-        self.save()?;
         Ok(is_updated)
     }
 
@@ -205,7 +204,6 @@ impl Dictionary {
         } else if let Some(index) = self.regex_items.iter().position(|item| item.key == key) {
             self.regex_items.remove(index);
         }
-        self.save()?;
         Ok(true)
     }
 
@@ -213,7 +211,7 @@ impl Dictionary {
         self.items.clear();
         self.regex_items.clear();
         self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
-        self.save()
+        Ok(())
     }
 }
 

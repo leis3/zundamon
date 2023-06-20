@@ -41,7 +41,9 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
         let mut config_lock = config.lock().unwrap();
         let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-        dict.add(item.clone())
+        let is_updated = dict.add(item.clone());
+        let _ = dict.save();
+        is_updated
     };
 
     interaction.create_interaction_response(&ctx.http, |response| {

@@ -46,6 +46,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
                 for item in items {
                     let _ = dict.add(item);
                 }
+                let _ = dict.save();
             }
             Ok("辞書をインポートしました。")
         },
