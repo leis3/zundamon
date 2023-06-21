@@ -1,18 +1,31 @@
 use crate::TextChannelId;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
-use serenity::model::application::interaction::{
-    InteractionResponseType,
-    application_command::ApplicationCommandInteraction
+use serenity::model::channel::ChannelType;
+use serenity::model::application::{
+    command::CommandOptionType,
+    interaction::{
+        InteractionResponseType,
+        application_command::{
+            CommandDataOptionValue,
+            ApplicationCommandInteraction
+        }
+    }
 };
 
 async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
+    let options = &interaction.data.options;
+
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).unwrap();
 
-    let channel_id = guild.voice_states
-        .get(&interaction.user.id)
-        .and_then(|voice_state| voice_state.channel_id);
+    let channel_id = if let Some(CommandDataOptionValue::Channel(channel)) = &options[0].resolved {
+        Some(channel.id)
+    } else {
+        guild.voice_states
+            .get(&interaction.user.id)
+            .and_then(|voice_state| voice_state.channel_id)
+    };
 
     let Some(connect_to) = channel_id else {
         return Err("接続に失敗しました。");
@@ -53,5 +66,12 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
 }
 
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {
-    command.name("join").description("ボイスチャンネルに接続します。")
+    command.name("join")
+        .description("ボイスチャンネルに接続します。")
+        .create_option(|option| {
+            option.name("ボイスチャンネル")
+                .description("接続するボイスチャンネル")
+                .kind(CommandOptionType::Channel)
+                .channel_types(&[ChannelType::Voice])
+        })
 }
