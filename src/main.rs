@@ -173,7 +173,7 @@ impl EventHandler for Handler {
                 text = format!("{} 以下省略", text.chars().take(MAX_TEXT_LEN).collect::<String>());
             }
 
-            let _ = speak(&ctx, guild.id, &text).await;
+            let _ = speak(&ctx, guild.id, text.trim()).await;
         }
     }
 
