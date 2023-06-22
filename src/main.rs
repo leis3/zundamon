@@ -7,7 +7,7 @@ use config::Config;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashMap;
-use chrono::Timelike;
+use chrono::{Timelike, Datelike};
 use anyhow::Result;
 use songbird::SerenityInit;
 use serenity::{
@@ -102,7 +102,8 @@ impl EventHandler for Handler {
                         .unwrap()
                         .as_secs();
                     if ((time % 3600) / 60, time % 60) == (0, 0) {
-                        let local_hour = chrono::offset::Local::now().hour();
+                        let now = chrono::offset::Local::now();
+                        let local_hour = now.hour();
                         for guild in guilds.clone() {
                             let is_in_vc = guild.to_guild_cached(&ctx.cache)
                                 .map(|guild| guild.voice_states.contains_key(&ctx.cache.current_user_id()));
@@ -110,7 +111,15 @@ impl EventHandler for Handler {
                                 let ctx = Arc::clone(&ctx);
                                 tokio::spawn(async move {
                                     let text = format!(
-                                        "{}{}時をお知らせします。",
+                                        "{}{}{}時をお知らせします。",
+                                        if local_hour == 0 {
+                                            let weekday_str = ["月", "火", "水", "木", "金", "土", "日"];
+                                            format!("{}月{}日{}曜日 ",
+                                                now.day(),
+                                                now.month(),
+                                                weekday_str[now.weekday().number_from_monday() as usize]
+                                            )
+                                        } else {"".into()},
                                         if local_hour < 12 {"午前"} else {"午後"},
                                         local_hour % 12
                                     );
