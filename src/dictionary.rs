@@ -185,6 +185,7 @@ impl Dictionary {
             self.remove(&item.key)?;
             is_updated = true;
         }
+        self.keys.insert(item.key.clone());
         if item.is_regex {
             self.regex_items.push(item);
         } else {
@@ -198,6 +199,7 @@ impl Dictionary {
         if !self.keys.contains(key) {
             return Ok(false);
         }
+        self.keys.remove(key);
         if let Some(index) = self.items.iter().position(|item| item.key == key) {
             self.items.remove(index);
             self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
@@ -210,6 +212,7 @@ impl Dictionary {
     pub fn reset(&mut self) -> Result<()> {
         self.items.clear();
         self.regex_items.clear();
+        self.keys.clear();
         self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
         Ok(())
     }
