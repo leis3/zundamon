@@ -160,7 +160,7 @@ impl Dictionary {
     }
 
     pub fn apply(&self, text: &str) -> Result<String> {
-        let mut text = text.to_ascii_lowercase();
+        let mut text = text.to_owned();
 
         for item in &self.regex_items {
             let re = regex::Regex::new(&item.key)?;
