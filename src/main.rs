@@ -89,6 +89,7 @@ impl EventHandler for Handler {
                 let _ = config.lock().unwrap().reload();
             }
         }
+        ctx.set_activity(Activity::playing(format!("v{}", env!("CARGO_PKG_VERSION")))).await;
     }
 
     async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
