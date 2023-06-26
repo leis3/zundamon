@@ -1,3 +1,4 @@
+use tracing::debug;
 use serenity::Result;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
@@ -7,6 +8,8 @@ use serenity::model::application::interaction::{
 };
 
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+    debug!("/leave");
+
     let guild_id = interaction.guild_id.unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();

@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use chrono::{Timelike, Datelike};
 use anyhow::Result;
 use songbird::SerenityInit;
+use tracing::{info, error};
+use tracing_subscriber::Layer;
+use tracing_subscriber::prelude::*;
 use serenity::{
     async_trait,
     prelude::*,
@@ -46,6 +49,13 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         match interaction {
             Interaction::ApplicationCommand(command) => {
+                let span = tracing::debug_span!(
+                    "ApplicationCommandInteraction",
+                    guild_id = command.guild_id.map(|e| e.0),
+                    channel_id = command.channel_id.0,
+                    user = format!("{}({})", command.user.name, command.user.id.0)
+                );
+                let _enter = span.enter();
                 if let Err(why) = match command.data.name.as_str() {
                     "join" => commands::join::run(&ctx, &command).await,
                     "leave" => commands::leave::run(&ctx, &command).await,
@@ -56,7 +66,7 @@ impl EventHandler for Handler {
                     "autojoin" => commands::autojoin::run(&ctx, &command).await,
                     _ => unimplemented!()
                 } {
-                    println!("Cannot respond to slash command: {why}");
+                    error!("Cannot respond to slash command: {why}");
                 }
             },
             _ => {}
@@ -245,6 +255,14 @@ async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
 
 #[tokio::main]
 async fn main() {
+    let layer = tracing_subscriber::fmt::layer()
+        .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
+            metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
+        }));
+    tracing_subscriber::registry()
+        .with(layer)
+        .init();
+
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let mut client = Client::builder(token, GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT)
@@ -261,10 +279,10 @@ async fn main() {
 
     tokio::spawn(async move {
         if let Err(why) = client.start().await {
-            println!("Client error: {why:?}");
+            error!("Client error: {why:?}");
         }
     });
 
     let _ = tokio::signal::ctrl_c().await;
-    println!("Received Ctrl-C, shutting down.");
+    info!("Received Ctrl-C, shutting down.");
 }

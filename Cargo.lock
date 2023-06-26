@@ -2389,6 +2389,8 @@ dependencies = [
  "serenity",
  "songbird",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "vvcore",
  "walkdir",
 ]

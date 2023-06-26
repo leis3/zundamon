@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::ConfigData;
 use crate::dictionary::DictItem;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::utils::Color;
@@ -21,6 +22,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let CommandDataOptionValue::String(key) = map["単語"].clone() else { panic!() };
     let CommandDataOptionValue::String(value) = map["読み"].clone() else { panic!() };
     let CommandDataOptionValue::Boolean(is_regex) = **map.get("正規表現").unwrap_or(&&CommandDataOptionValue::Boolean(false)) else { panic!() };
+
+    debug!(key = %key, value = %value, is_regex = %is_regex, "/dictionary add");
 
     if is_regex && regex::Regex::new(&key).is_err() {
         let msg = "入力した正規表現が無効です。";

@@ -1,3 +1,4 @@
+use tracing::debug;
 use serenity::Result;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
@@ -7,6 +8,8 @@ use serenity::model::application::interaction::{
 };
 
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
+    debug!("/version");
+
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| message.content(env!("CARGO_PKG_VERSION")))

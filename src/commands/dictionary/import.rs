@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::ConfigData;
 use crate::dictionary::DictItem;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::utils::Color;
 use serenity::model::application::interaction::{
@@ -18,6 +19,8 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     }).collect::<HashMap<_, _>>();
 
     let CommandDataOptionValue::Attachment(file) = map["file"] else { panic!() };
+
+    debug!(file = %file.filename, "/dictionary import");
 
     let path = std::path::Path::new(&file.filename);
     let Some(format) = path.extension().and_then(|f| f.to_str()) else {

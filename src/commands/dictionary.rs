@@ -13,6 +13,16 @@ use serenity::model::application::interaction::application_command::ApplicationC
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     let option = &interaction.data.options[0];
 
+    
+    let span = tracing::debug_span!(
+        parent: None,
+        "ApplicationCommandInteraction",
+        guild_id = interaction.guild_id.map(|e| e.0),
+        channel_id = interaction.channel_id.0,
+        user = format!("{}({})", interaction.user.name, interaction.user.id.0)
+    );
+    let _enter = span.enter();
+
     match option.name.as_str() {
         "add" => add::run(ctx, interaction).await,
         "remove" => remove::run(ctx, interaction).await,

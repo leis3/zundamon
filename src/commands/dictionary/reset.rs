@@ -1,4 +1,5 @@
 use crate::ConfigData;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::model::application::{
@@ -36,6 +37,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         .await_component_interaction(&ctx.shard).await
         .unwrap();
     msg_interaction.defer(&ctx.http).await?;
+
+    debug!(reset = %msg_interaction.data.custom_id, "/dictionary reset");
 
     let response_message = match msg_interaction.data.custom_id.as_str() {
         "reset_cancel" => {

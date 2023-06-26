@@ -1,4 +1,5 @@
 use crate::TextChannelId;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::channel::ChannelType;
@@ -26,6 +27,8 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
             .get(&interaction.user.id)
             .and_then(|voice_state| voice_state.channel_id)
     };
+
+    debug!(channel_id = ?channel_id, "/join");
 
     let Some(connect_to) = channel_id else {
         return Err("接続に失敗しました。");

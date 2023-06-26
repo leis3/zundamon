@@ -1,4 +1,5 @@
 use crate::ConfigData;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::builder::CreateApplicationCommand;
@@ -16,6 +17,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let CommandDataOptionValue::Boolean(enable) = *options[0].resolved.as_ref().unwrap() else {
         panic!()
     };
+
+    debug!(enable = %enable, "/autojoin");
 
     let guild_id = interaction.guild_id.unwrap();
 

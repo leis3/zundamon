@@ -1,4 +1,5 @@
 use crate::ConfigData;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::utils::Color;
@@ -15,6 +16,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let CommandDataOptionValue::String(key) = options[0].resolved.as_ref().unwrap() else {
         panic!()
     };
+
+    debug!(key = %key, "/dictionary remove");
 
     let guild_id = interaction.guild_id.unwrap();
 
