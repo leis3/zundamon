@@ -46,9 +46,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
                 let mut config_lock = config.lock().unwrap();
                 let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-                for item in items {
-                    let _ = dict.add(item);
-                }
+                let _ = dict.add_items(items);
                 let _ = dict.save();
             }
             Ok("辞書をインポートしました。")

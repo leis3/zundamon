@@ -95,6 +95,27 @@ impl Dictionary {
         Ok(is_updated)
     }
 
+    pub fn add_items(&mut self, items: Vec<DictItem>) -> Result<()> {
+        for item in items {
+            self.keys.insert(item.key.clone());
+            if item.is_regex {
+                if let Some(old_item) = self.regex_items.iter_mut().find(|i| i.key == item.key) {
+                    *old_item = item;
+                } else {
+                    self.regex_items.push(item);
+                }
+            } else {
+                if let Some(old_item) = self.items.iter_mut().find(|i| i.key == item.key) {
+                    *old_item = item;
+                } else {
+                    self.items.push(item);
+                }
+            }
+        }
+        self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
+        Ok(())
+    }
+
     pub fn remove(&mut self, key: &str) -> Result<bool> {
         if !self.keys.contains(key) {
             return Ok(false);
