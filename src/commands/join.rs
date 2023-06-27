@@ -20,7 +20,9 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).unwrap();
 
-    let channel_id = if let Some(CommandDataOptionValue::Channel(channel)) = &options[0].resolved {
+    let channel_id = if let Some(CommandDataOptionValue::Channel(channel)) =
+        &options.get(0).and_then(|opt| opt.resolved.as_ref())
+    {
         Some(channel.id)
     } else {
         guild.voice_states
