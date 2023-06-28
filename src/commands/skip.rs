@@ -15,6 +15,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let success = if let Some(handle) = manager.get(interaction.guild_id.unwrap()) {
         let mut handler = handle.lock().await;
         handler.stop();
+        handler.queue().modify_queue(|q| q.clear());
         true
     } else {
         false

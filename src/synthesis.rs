@@ -68,7 +68,8 @@ pub fn ffmpeg(data: &[u8]) -> Input {
     let mut stdin = command.stdin.take().expect("Failed to open stdin");
     let data = Arc::new(data.to_vec());
     std::thread::spawn(move || {
-        stdin.write_all(&data).expect("Failed to write to stdin");  
+        // `/skip`によってBroken pipeになる可能性があるので結果を無視する
+        let _ = stdin.write_all(&data);
     });
 
     Input::new(
