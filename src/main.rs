@@ -2,6 +2,7 @@ mod synthesis;
 mod commands;
 mod dictionary;
 mod config;
+mod log;
 
 use config::Config;
 use std::sync::{Arc, Mutex};
@@ -10,7 +11,7 @@ use std::collections::HashMap;
 use chrono::{Timelike, Datelike};
 use anyhow::Result;
 use songbird::SerenityInit;
-use tracing::{info, error};
+use structopt::StructOpt;
 use tracing_subscriber::Layer;
 use tracing_subscriber::prelude::*;
 use serenity::{
@@ -50,7 +51,7 @@ impl EventHandler for Handler {
         match interaction {
             Interaction::ApplicationCommand(command) => {
                 let span = tracing::debug_span!(
-                    "ApplicationCommandInteraction",
+                    "Command",
                     guild_id = command.guild_id.map(|e| e.0),
                     channel_id = command.channel_id.0,
                     user = format!("{}({})", command.user.name, command.user.id.0)
@@ -253,15 +254,37 @@ async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, StructOpt)]
+struct Opt {
+    /// Discord Webhoook URL to send logs to
+    #[structopt(short, long)]
+    pub log_webhook: Option<String>
+}
+
 #[tokio::main]
 async fn main() {
-    let layer = tracing_subscriber::fmt::layer()
-        .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
-            metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
-        }));
-    tracing_subscriber::registry()
-        .with(layer)
-        .init();
+    let opt = Opt::from_args();
+
+    if let Some(url) = &opt.log_webhook {
+        log::LOG_WEBHOOK.get_or_init(|| url.clone());
+        let layer = tracing_subscriber::fmt::layer()
+            .map_writer(|_| || log::LogWriter)
+            .without_time()
+            .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
+                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
+            }));
+        tracing_subscriber::registry()
+            .with(layer)
+            .init();
+    } else {
+        let layer = tracing_subscriber::fmt::layer()
+            .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
+                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
+            }));
+        tracing_subscriber::registry()
+            .with(layer)
+            .init();
+    }
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 

@@ -1,4 +1,4 @@
-use tracing::debug;
+use crate::debug;
 use serenity::Result;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
