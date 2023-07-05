@@ -60,6 +60,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
                             "辞書に登録しました。"
                         };
                         embed.title(title)
+                            .description(format!("正規表現: {}", if item.is_regex {"あり"} else {"なし"}))
                             .color(Color::from_rgb(0x66, 0xbb, 0x6a))
                             .fields([
                                 ("単語", format!("```{}```", item.key), false),
