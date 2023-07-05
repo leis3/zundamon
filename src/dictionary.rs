@@ -137,6 +137,10 @@ impl Dictionary {
         self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
         Ok(())
     }
+
+    pub fn search<'a>(&'a self, key: &str) -> Option<&'a DictItem> {
+        self.items.iter().chain(self.regex_items.iter()).find(|item| item.key == key)
+    }
 }
 
 impl Default for Dictionary {

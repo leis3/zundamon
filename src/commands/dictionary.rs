@@ -3,6 +3,7 @@ mod remove;
 mod reset;
 mod export;
 mod import;
+mod search;
 
 use serenity::prelude::*;
 use serenity::Result;
@@ -16,7 +17,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     
     let span = tracing::debug_span!(
         parent: None,
-        "ApplicationCommandInteraction",
+        "Command",
         guild_id = interaction.guild_id.map(|e| e.0),
         channel_id = interaction.channel_id.0,
         user = format!("{}({})", interaction.user.name, interaction.user.id.0)
@@ -29,6 +30,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         "reset" => reset::run(ctx, interaction).await,
         "export" => export::run(ctx, interaction).await,
         "import" => import::run(ctx, interaction).await,
+        "search" => search::run(ctx, interaction).await,
         _ => panic!("unexpected subcommand name")
     }
 }
@@ -96,5 +98,12 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                         .kind(CommandOptionType::Attachment)
                         .required(true)
                 })
+        })
+        .create_option(|option| {
+            option.name("search")
+                .description("辞書に登録されている単語を検索します。")
+                .kind(CommandOptionType::String)
+                .required(true)
+                .description("検索する単語")
         })
 }
