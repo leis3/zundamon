@@ -102,8 +102,12 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
         .create_option(|option| {
             option.name("search")
                 .description("辞書に登録されている単語を検索します。")
-                .kind(CommandOptionType::String)
-                .required(true)
-                .description("検索する単語")
+                .kind(CommandOptionType::SubCommand)
+                .create_sub_option(|option| {
+                    option.name("単語")
+                        .required(true)
+                        .kind(CommandOptionType::String)
+                        .description("検索する単語")
+                })
         })
 }
