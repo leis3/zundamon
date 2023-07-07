@@ -18,10 +18,10 @@ $ chmod +x download
 $ ./download # CUDA版を利用する場合は`--device cuda`オプションを付ける
 ```
 
-3. 実行する。
+3. 環境変数`LD_LIBRARY_PATH`と`DISCORD_TOKEN`を設定して実行する。
 
 ```console
-$ LD_LIBRARY_PATH=./voicevox_core:$LD_LIBRARY_PATH \
-DISCORD_TOKEN=xxxxxx \
-cargo run --release
+$ export LD_LIBRARY_PATH=./voicevox_core:$LD_LIBRARY_PATH
+$ export DISCORD_TOKEN=xxxxxx
+$ cargo run --release
 ```
