@@ -153,6 +153,19 @@ impl EventHandler for Handler {
                 dict.apply(&msg.content).unwrap_or(msg.content.clone())
             };
 
+            // 絵文字変換
+            let content = {
+                let mut s = String::new();
+                for c in content.chars() {
+                    if unic_emoji_char::is_emoji(c) {
+                        s.push_str(&deunicode::deunicode_with_tofu(&c.to_string(), ""));
+                    } else {
+                        s.push(c);
+                    }
+                }
+                s
+            };
+
             text.push_str(&content);
 
             // 長文は省略
