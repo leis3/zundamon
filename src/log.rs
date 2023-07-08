@@ -47,7 +47,7 @@ pub async fn send_log() -> Result<()> {
 macro_rules! trace {
     ($($arg:tt)*) => {
         tracing::trace!($($arg)*);
-        let _ = crate::log::send_log().await;
+        let _ = $crate::log::send_log().await;
     };
 }
 
@@ -55,7 +55,7 @@ macro_rules! trace {
 macro_rules! debug {
     ($($arg:tt)*) => {
         tracing::debug!($($arg)*);
-        let _ = crate::log::send_log().await;
+        let _ = $crate::log::send_log().await;
     };
 }
 
@@ -63,7 +63,7 @@ macro_rules! debug {
 macro_rules! info {
     ($($arg:tt)*) => {
         tracing::info!($($arg)*);
-        let _ = crate::log::send_log().await;
+        let _ = $crate::log::send_log().await;
     };
 }
 
@@ -71,7 +71,7 @@ macro_rules! info {
 macro_rules! warn {
     ($($arg:tt)*) => {
         tracing::warn!($($arg)*);
-        let _ = crate::log::send_log().await;
+        let _ = $crate::log::send_log().await;
     };
 }
 
@@ -79,6 +79,6 @@ macro_rules! warn {
 macro_rules! error {
     ($($arg:tt)*) => {
         tracing::error!($($arg)*);
-        let _ = crate::log::send_log().await;
+        let _ = $crate::log::send_log().await;
     };
 }

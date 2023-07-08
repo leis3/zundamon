@@ -104,12 +104,10 @@ impl Dictionary {
                 } else {
                     self.regex_items.push(item);
                 }
+            } else if let Some(old_item) = self.items.iter_mut().find(|i| i.key == item.key) {
+                *old_item = item;
             } else {
-                if let Some(old_item) = self.items.iter_mut().find(|i| i.key == item.key) {
-                    *old_item = item;
-                } else {
-                    self.items.push(item);
-                }
+                self.items.push(item);
             }
         }
         self.automaton = AhoCorasick::new(self.items.iter().map(|item| item.key.clone()))?;
