@@ -1,6 +1,7 @@
 use crate::commands;
 use crate::synthesis;
 use crate::error;
+use crate::info;
 use crate::type_map::{TextChannelId, ConfigData, ConnectedChannel};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -225,6 +226,7 @@ impl EventHandler for Handler {
     }
 
     async fn resume(&self, ctx: Context, _: ResumedEvent) {
+        info!("Reconnected");
         let connected = {
             let data_read = ctx.data.read().await;
             let connected = data_read.get::<ConnectedChannel>().unwrap();
