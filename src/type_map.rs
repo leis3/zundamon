@@ -17,3 +17,9 @@ pub struct ConfigData;
 impl TypeMapKey for ConfigData {
     type Value = Arc<Mutex<Config>>;
 }
+
+pub struct ConnectedChannel;
+
+impl TypeMapKey for ConnectedChannel {
+    type Value = Arc<Mutex<HashMap<GuildId, ChannelId>>>;
+}
