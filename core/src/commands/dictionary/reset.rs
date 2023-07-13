@@ -30,8 +30,6 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
             })
     }).await?;
 
-    let guild_id = interaction.guild_id.unwrap();
-
     let msg_interaction = interaction
         .get_interaction_response(&ctx.http).await?
         .await_component_interaction(&ctx.shard).await
@@ -40,24 +38,20 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
 
     debug!(reset = %msg_interaction.data.custom_id, "/dictionary reset");
 
+    let guild_id = interaction.guild_id.unwrap();
+
     let response_message = match msg_interaction.data.custom_id.as_str() {
         "reset_cancel" => {
             "リセットをキャンセルしました。"
         },
         "reset_do" => {
-            {
-                let data_read = ctx.data.read().await;
-                let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-                let mut config_lock = config.lock().unwrap();
-                let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-                let msg = if dict.reset().is_ok() {
-                    "辞書をリセットしました。"
-                } else {
-                    "辞書のリセットに失敗しました。"
-                };
-                let _ = dict.save();
-                msg
-            }
+            let data_read = ctx.data.read().await;
+            let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
+            let mut lock = config.lock().unwrap();
+            let config = lock.guild_config_mut(guild_id);
+            config.dictionary.clear();
+            let _ = config.save(guild_id);
+            "辞書をリセットしました。"
         },
         _ => unreachable!()
     };

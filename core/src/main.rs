@@ -1,6 +1,5 @@
 mod synthesis;
 mod commands;
-mod dictionary;
 mod config;
 mod log;
 mod event_handler;
@@ -8,7 +7,7 @@ mod type_map;
 
 use config::Config;
 use event_handler::Handler;
-use type_map::{TextChannelId, ConfigData, ConnectedChannel};
+use type_map::{TextChannelId, ConfigData};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use songbird::SerenityInit;
@@ -66,7 +65,6 @@ async fn main() {
         let mut data = client.data.write().await;
         data.insert::<TextChannelId>(Arc::new(Mutex::new(HashMap::default())));
         data.insert::<ConfigData>(Arc::new(Mutex::new(Config::load().unwrap_or_default())));
-        data.insert::<ConnectedChannel>(Arc::new(Mutex::new(HashMap::new())));
     }
 
     tokio::spawn(async move {

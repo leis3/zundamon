@@ -1,8 +1,7 @@
 use crate::commands;
 use crate::synthesis;
 use crate::error;
-use crate::info;
-use crate::type_map::{TextChannelId, ConfigData, ConnectedChannel};
+use crate::type_map::{TextChannelId, ConfigData};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use chrono::{Timelike, Datelike};
@@ -154,19 +153,6 @@ impl EventHandler for Handler {
                 dict.apply(&msg.content).unwrap_or(msg.content.clone())
             };
 
-            // 絵文字変換
-            let content = {
-                let mut s = String::new();
-                for c in content.chars() {
-                    if unic_emoji_char::is_emoji(c) {
-                        s.push_str(&deunicode::deunicode_with_tofu(&c.to_string(), ""));
-                    } else {
-                        s.push(c);
-                    }
-                }
-                s
-            };
-
             text.push_str(&content);
 
             // 長文は省略
@@ -197,9 +183,6 @@ impl EventHandler for Handler {
                     let channel_id = data_read.get::<TextChannelId>().unwrap();
                     let mut lock = channel_id.lock().unwrap();
                     lock.insert(guild_id, connect_to);
-                    let connected = data_read.get::<ConnectedChannel>().unwrap();
-                    let mut lock = connected.lock().unwrap();
-                    lock.insert(guild_id, connect_to);
                 }
             }
         }
@@ -216,26 +199,6 @@ impl EventHandler for Handler {
             let Some(guild_id) = old.guild_id else { return; };
             let manager = songbird::get(&ctx).await.unwrap();
             let _ = manager.leave(guild_id).await;
-            {
-                let data_read = ctx.data.read().await;
-                let connected = data_read.get::<ConnectedChannel>().unwrap();
-                let mut lock = connected.lock().unwrap();
-                lock.remove(&guild_id);
-            }
-        }
-    }
-
-    async fn resume(&self, ctx: Context, _: ResumedEvent) {
-        info!("Reconnected");
-        let connected = {
-            let data_read = ctx.data.read().await;
-            let connected = data_read.get::<ConnectedChannel>().unwrap();
-            let lock = connected.lock().unwrap();
-            lock.iter().map(|(&g, &c)| (g, c)).collect::<Vec<_>>()
-        };
-        let manager = songbird::get(&ctx).await.unwrap();
-        for (guild_id, channel_id) in connected {
-            let _ = manager.join(guild_id, channel_id).await;
         }
     }
 }

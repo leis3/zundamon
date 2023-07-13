@@ -26,8 +26,8 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
             let data = {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-                let mut config_lock = config.lock().unwrap();
-                let dict = &config_lock.guild_config(guild_id).dictionary;
+                let mut lock = config.lock().unwrap();
+                let dict = &lock.guild_config(guild_id).dictionary;
                 serde_json::to_string_pretty(dict).unwrap()
             };
 

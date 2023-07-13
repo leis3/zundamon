@@ -242,6 +242,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "core"
+version = "0.1.4"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dictionary",
+ "duct",
+ "hound",
+ "once_cell",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serenity",
+ "songbird",
+ "strip-ansi-escapes",
+ "structopt",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "vvcore",
+ "walkdir",
+]
+
+[[package]]
 name = "core-foundation"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -324,6 +349,19 @@ name = "deunicode"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c1bba4f227a4a53d12b653f50ca7bf10c9119ae2aba56aff9e0338b5c98f36a"
+
+[[package]]
+name = "dictionary"
+version = "0.1.0"
+dependencies = [
+ "aho-corasick",
+ "anyhow",
+ "deunicode",
+ "regex",
+ "serde",
+ "serde_json",
+ "unic-emoji-char",
+]
 
 [[package]]
 name = "digest"
@@ -2594,30 +2632,3 @@ name = "zeroize"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4756f7db3f7b5574938c3eb1c117038b8e07f95ee6718c0efad4ac21508f1efd"
-
-[[package]]
-name = "zundamon"
-version = "0.1.4"
-dependencies = [
- "aho-corasick",
- "anyhow",
- "chrono",
- "deunicode",
- "duct",
- "hound",
- "once_cell",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "serenity",
- "songbird",
- "strip-ansi-escapes",
- "structopt",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "unic-emoji-char",
- "vvcore",
- "walkdir",
-]

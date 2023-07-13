@@ -24,21 +24,21 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let is_removed = {
         let data_read = ctx.data.read().await;
         let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-        let mut config_lock = config.lock().unwrap();
-        let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-        let is_removed = dict.remove(key);
-        let _ = dict.save();
+        let mut lock = config.lock().unwrap();
+        let config = lock.guild_config_mut(guild_id);
+        let is_removed = config.dictionary.remove(key).is_some();
+        let _ = config.save(guild_id);
         is_removed
     };
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {
-                if matches!(is_removed, Ok(true)) {
+                if is_removed {
                     message.embed(|embed| {
                         embed.title("辞書から削除しました。")
                             .color(Color::from_rgb(0x66, 0xbb, 0x6a))
-                            .field("単語", format!("`{}`", key), false)
+                            .field("単語", format!("```{}```", key), false)
                     })
                 } else {
                     message.ephemeral(true).content("指定した単語は辞書に登録されていません。")

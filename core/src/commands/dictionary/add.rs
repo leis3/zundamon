@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::ConfigData;
-use crate::dictionary::DictItem;
 use crate::debug;
+use dictionary::DictItem;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::utils::Color;
@@ -41,35 +41,31 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
 
     let is_updated = {
         let data_read = ctx.data.read().await;
-        let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-        let mut config_lock = config.lock().unwrap();
-        let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-        let is_updated = dict.add(item.clone());
-        let _ = dict.save();
+        let config = data_read.get::<ConfigData>().unwrap();
+        let mut lock = config.lock().unwrap();
+        let config = lock.guild_config_mut(guild_id);
+        let is_updated = config.dictionary.insert(item.clone()).is_some();
+        let _ = config.save(guild_id);
         is_updated
     };
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)
             .interaction_response_data(|message| {
-                if let Ok(is_updated) = is_updated {
-                    message.embed(|embed| {
-                        let title = if is_updated {
-                            "辞書を上書きしました。"
-                        } else {
-                            "辞書に登録しました。"
-                        };
-                        embed.title(title)
-                            .description(format!("正規表現: {}", if item.is_regex {"あり"} else {"なし"}))
-                            .color(Color::from_rgb(0x66, 0xbb, 0x6a))
-                            .fields([
-                                ("単語", format!("```{}```", item.key), false),
-                                ("読み", format!("```{}```", item.value), false)
-                            ])
-                    })
-                } else {
-                    message.ephemeral(true).content("辞書の登録に失敗しました。")
-                }
+                message.embed(|embed| {
+                    let title = if is_updated {
+                        "辞書を上書きしました。"
+                    } else {
+                        "辞書に登録しました。"
+                    };
+                    embed.title(title)
+                        .description(format!("正規表現: {}", if item.is_regex {"あり"} else {"なし"}))
+                        .color(Color::from_rgb(0x66, 0xbb, 0x6a))
+                        .fields([
+                            ("単語", format!("```{}```", item.key), false),
+                            ("読み", format!("```{}```", item.value), false)
+                        ])
+                })
             })
     }).await
 }

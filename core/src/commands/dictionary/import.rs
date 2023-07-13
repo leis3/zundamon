@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::ConfigData;
-use crate::dictionary::DictItem;
 use crate::debug;
+use dictionary::DictItem;
 use serenity::prelude::*;
 use serenity::utils::Color;
 use serenity::model::application::interaction::{
@@ -44,10 +44,10 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
             {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().expect("Expected ConfigData in TypeMap.");
-                let mut config_lock = config.lock().unwrap();
-                let dict = &mut config_lock.guild_config_mut(guild_id).dictionary;
-                let _ = dict.add_items(items);
-                let _ = dict.save();
+                let mut lock = config.lock().unwrap();
+                let config = lock.guild_config_mut(guild_id);
+                config.dictionary.extend(items);
+                let _ = config.save(guild_id);
             }
             Ok("辞書をインポートしました。")
         },

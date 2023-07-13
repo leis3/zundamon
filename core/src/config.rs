@@ -1,4 +1,4 @@
-use crate::dictionary::Dictionary;
+use dictionary::Dictionary;
 use std::io::Write;
 use std::path::Path;
 use std::collections::HashMap;
@@ -24,26 +24,36 @@ pub struct GuildConfig {
 
 impl GuildConfig {
     pub fn load(guild_id: GuildId) -> Result<Self> {
-        let path = Path::new(CONFIG_DIR).join(guild_id.0.to_string()).join(CONFIG_FILE);
-        if let Ok(data) = std::fs::read_to_string(&path) {
-            Ok(Self {
-                dictionary: Dictionary::load(guild_id)?,
-                ..serde_json::from_str(&data)?
-            })
-        } else {
-            std::fs::create_dir_all(path.parent().unwrap())?;
-            let mut file = std::fs::File::create(path)?;
+        let dir = Path::new(CONFIG_DIR).join(guild_id.0.to_string());
+        let config_path = dir.join(CONFIG_FILE);
+        let dict_path = dir.join(DICT_FILE);
+        if config_path.exists() {
+            std::fs::create_dir_all(&dir)?;
+            let mut file = std::fs::File::create(&config_path)?;
             let config = Self::default();
             writeln!(file, "{}", serde_json::to_string_pretty(&config)?)?;
-            Ok(config)
         }
+        if dict_path.exists() {
+            std::fs::create_dir_all(&dir)?;
+            let mut file = std::fs::File::create(&dict_path)?;
+            let dict = Dictionary::new();
+            writeln!(file, "{}", serde_json::to_string_pretty(&dict)?)?;
+        }
+        let config = std::fs::read_to_string(&config_path)?;
+        let dict = std::fs::read_to_string(&dict_path)?;
+        Ok(Self {
+            dictionary: serde_json::from_str(&dict)?,
+            ..serde_json::from_str(&config)?
+        })
     }
 
     pub fn save(&self, guild_id: GuildId) -> Result<()> {
-        let path = Path::new(CONFIG_DIR).join(guild_id.0.to_string()).join(CONFIG_FILE);
-        let mut file = std::fs::File::open(path)?;
+        let dir = Path::new(CONFIG_DIR).join(guild_id.0.to_string());
+        let mut file = std::fs::File::open(dir.join(CONFIG_FILE))?;
         writeln!(file, "{}", serde_json::to_string_pretty(&self)?)?;
-        self.dictionary.save()
+        let mut file = std::fs::File::open(dir.join(DICT_FILE))?;
+        writeln!(file, "{}", serde_json::to_string_pretty(&self.dictionary)?)?;
+        Ok(())
     }
 }
 
