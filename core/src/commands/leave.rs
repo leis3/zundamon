@@ -1,4 +1,5 @@
 use crate::debug;
+use crate::type_map::ConnectedChannel;
 use serenity::Result;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
@@ -15,6 +16,12 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let manager = songbird::get(ctx).await.unwrap();
 
     let success =  manager.leave(guild_id).await.is_ok();
+    {
+        let data_read = ctx.data.read().await;
+        let connected = data_read.get::<ConnectedChannel>().unwrap();
+        let mut lock = connected.lock().unwrap();
+        lock.remove(&guild_id);
+    }
 
     interaction.create_interaction_response(&ctx.http, |response| {
         response.kind(InteractionResponseType::ChannelMessageWithSource)

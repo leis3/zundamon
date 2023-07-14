@@ -1,4 +1,4 @@
-use crate::TextChannelId;
+use crate::{TextChannelId, ConnectedChannel};
 use crate::debug;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;
@@ -47,6 +47,9 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
         let channel_id = data_read.get::<TextChannelId>().unwrap();
         let mut lock = channel_id.lock().unwrap();
         lock.insert(guild_id, interaction.channel_id);
+        let connected = data_read.get::<ConnectedChannel>().unwrap();
+        let mut lock = connected.lock().unwrap();
+        lock.insert(guild_id, connect_to);
     }
     
 

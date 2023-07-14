@@ -1,7 +1,7 @@
 use crate::commands;
 use crate::synthesis;
 use crate::error;
-use crate::type_map::{TextChannelId, ConfigData};
+use crate::type_map::{TextChannelId, ConfigData, ConnectedChannel};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use chrono::{Timelike, Datelike};
@@ -183,6 +183,9 @@ impl EventHandler for Handler {
                     let channel_id = data_read.get::<TextChannelId>().unwrap();
                     let mut lock = channel_id.lock().unwrap();
                     lock.insert(guild_id, connect_to);
+                    let connected = data_read.get::<ConnectedChannel>().unwrap();
+                    let mut lock = connected.lock().unwrap();
+                    lock.insert(guild_id, connect_to);
                 }
             }
         }
@@ -199,6 +202,25 @@ impl EventHandler for Handler {
             let Some(guild_id) = old.guild_id else { return; };
             let manager = songbird::get(&ctx).await.unwrap();
             let _ = manager.leave(guild_id).await;
+            {
+                let data_read = ctx.data.read().await;
+                let connected = data_read.get::<ConnectedChannel>().unwrap();
+                let mut lock = connected.lock().unwrap();
+                lock.remove(&guild_id);
+            }
+        }
+    }
+
+    async fn resume(&self, ctx: Context, _: ResumedEvent) {
+        let connected = {
+            let data_read = ctx.data.read().await;
+            let connected = data_read.get::<ConnectedChannel>().unwrap();
+            let lock = connected.lock().unwrap();
+            lock.iter().map(|(&g, &c)| (g, c)).collect::<Vec<_>>()
+        };
+        let manager = songbird::get(&ctx).await.unwrap();
+        for (guild_id, channel_id) in connected {
+            let _ = manager.join(guild_id, channel_id).await;
         }
     }
 }
