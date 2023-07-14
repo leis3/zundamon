@@ -76,7 +76,7 @@ jobs:
         ./download
 
     - name: Install
-      run: LD_LIBRARY_PATH=./voicevox_core:$LD_LIBRARY_PATH cargo install --path . -v --locked
+      run: LD_LIBRARY_PATH=./voicevox_core:$LD_LIBRARY_PATH cargo install --path core -v --locked
       
     - name: Create an asset
       id: asset
