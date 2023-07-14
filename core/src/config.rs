@@ -49,9 +49,9 @@ impl GuildConfig {
 
     pub fn save(&self, guild_id: GuildId) -> Result<()> {
         let dir = Path::new(CONFIG_DIR).join(guild_id.0.to_string());
-        let mut file = std::fs::File::open(dir.join(CONFIG_FILE))?;
+        let mut file = std::fs::File::create(dir.join(CONFIG_FILE))?;
         writeln!(file, "{}", serde_json::to_string_pretty(&self)?)?;
-        let mut file = std::fs::File::open(dir.join(DICT_FILE))?;
+        let mut file = std::fs::File::create(dir.join(DICT_FILE))?;
         writeln!(file, "{}", serde_json::to_string_pretty(&self.dictionary)?)?;
         Ok(())
     }
