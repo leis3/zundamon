@@ -27,13 +27,13 @@ impl GuildConfig {
         let dir = Path::new(CONFIG_DIR).join(guild_id.0.to_string());
         let config_path = dir.join(CONFIG_FILE);
         let dict_path = dir.join(DICT_FILE);
-        if config_path.exists() {
+        if !config_path.exists() {
             std::fs::create_dir_all(&dir)?;
             let mut file = std::fs::File::create(&config_path)?;
             let config = Self::default();
             writeln!(file, "{}", serde_json::to_string_pretty(&config)?)?;
         }
-        if dict_path.exists() {
+        if !dict_path.exists() {
             std::fs::create_dir_all(&dir)?;
             let mut file = std::fs::File::create(&dict_path)?;
             let dict = Dictionary::new();
