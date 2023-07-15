@@ -252,7 +252,7 @@ fn time_message() -> String {
             format!("{}月{}日{}曜日 ",
                 now.day(),
                 now.month(),
-                weekday_str[now.weekday().number_from_monday() as usize]
+                weekday_str[now.weekday().number_from_monday() as usize - 1]
             )
         } else {"".into()},
         if local_hour < 12 {"午前"} else {"午後"},
