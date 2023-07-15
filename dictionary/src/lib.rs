@@ -1,8 +1,12 @@
+mod eng_dic;
+
+use eng_dic::ENG_DIC;
 use std::path::Path;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use anyhow::Result;
 use aho_corasick::AhoCorasick;
 use serde::{Serialize, Deserialize};
+use kanaria::utils::{AsciiUtils, WidthUtils};
 
 #[derive(Debug, Clone)]
 pub struct Dictionary {
@@ -19,8 +23,17 @@ pub struct DictItem {
     pub is_regex: bool
 }
 
+fn to_narrow(s: &str) -> String {
+    s.chars().map(|c| {
+        if AsciiUtils::is_wide_ascii(c) {
+            WidthUtils::convert_to_narrow(c).0
+        } else {c}
+    }).collect()
+}
+
 impl Dictionary {
     pub fn new() -> Self {
+        let _dic = &*ENG_DIC;
         Self::default()
     }
 
@@ -86,8 +99,10 @@ impl Dictionary {
         )
     }
 
-    pub fn apply<T: Into<String>>(&self, text: T) -> Result<String> {
-        let mut text = text.into();
+    pub fn apply<T: AsRef<str>>(&self, text: T) -> Result<String> {
+        // 全角のASCII文字を半角に変換する
+        // 全角仮名はそのままで問題ない
+        let mut text = to_narrow(text.as_ref());
 
         for item in &self.regex_items {
             let re = regex::Regex::new(&item.key)?;
@@ -104,9 +119,9 @@ impl Dictionary {
         }
 
         // 絵文字変換
-        let text = {
+        let mut text = {
             let mut s = String::new();
-            for c in String::from_utf8(text_bytes)?.chars() {
+            for c in String::from_utf8(text_bytes)?.chars().map(|c| c.to_ascii_lowercase()) {
                 if unic_emoji_char::is_emoji(c) {
                     s.push_str(&deunicode::deunicode_with_tofu(&c.to_string(), ""));
                 } else {
@@ -115,6 +130,21 @@ impl Dictionary {
             }
             s
         };
+
+        let re = regex::Regex::new("[a-z]+").unwrap();
+        let mut replace = HashMap::new();
+        for m in re.find_iter(&text) {
+            if let Some((key, value)) = ENG_DIC.get_key_value(m.as_str()) {
+                replace.insert(key.clone(), value.clone());
+            } else {
+                use wana_kana::ConvertJapanese;
+                replace.insert(m.as_str().to_string(), m.as_str().to_kana());
+            }
+        }
+
+        for (key, value) in replace {
+            text = text.replace(&key, &value);
+        }
         
         Ok(text)
     }

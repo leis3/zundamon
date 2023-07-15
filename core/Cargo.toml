@@ -6,13 +6,13 @@ edition = "2021"
 [dependencies]
 dictionary = { path = "../dictionary" }
 anyhow = { workspace = true }
+once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { version = "0.4.24", default-features = false, features = ["clock"] }
 duct = "0.13.6"
 hound = "3.5.0"
-once_cell = "1.17.1"
 reqwest = "0.11.17"
 songbird = { version = "0.3.2", features = ["builtin-queue"] }
 strip-ansi-escapes = "0.1.1"
