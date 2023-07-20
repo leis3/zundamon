@@ -38,7 +38,7 @@ async fn main() {
             .map_writer(|_| || log::LogWriter)
             .without_time()
             .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
-                metadata.target().contains("core") && metadata.level() <= &tracing::Level::DEBUG
+                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
             }));
         tracing_subscriber::registry()
             .with(layer)
@@ -46,7 +46,7 @@ async fn main() {
     } else {
         let layer = tracing_subscriber::fmt::layer()
             .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
-                metadata.target().contains("core") && metadata.level() <= &tracing::Level::DEBUG
+                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
             }));
         tracing_subscriber::registry()
             .with(layer)
