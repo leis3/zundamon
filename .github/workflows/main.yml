@@ -62,6 +62,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Setup Task
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Setup `${{ matrix.toolchain }}`
       uses: actions-rs/toolchain@v1
       with:
