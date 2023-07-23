@@ -45,6 +45,7 @@ impl EventHandler for Handler {
                     "dictionary" => commands::dictionary::run(&ctx, &command).await,
                     "time-signal" => commands::time_signal::run(&ctx, &command).await,
                     "autojoin" => commands::autojoin::run(&ctx, &command).await,
+                    "status" => commands::status::run(&ctx, &command).await,
                     _ => unimplemented!()
                 } {
                     error!("Cannot respond to slash command: {why}");
@@ -72,6 +73,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
                     .create_application_command(|cmd| commands::time_signal::register(cmd))
                     .create_application_command(|cmd| commands::autojoin::register(cmd))
+                    .create_application_command(|cmd| commands::status::register(cmd))
             }).await.unwrap();
 
             {
