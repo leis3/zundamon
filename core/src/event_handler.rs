@@ -243,7 +243,7 @@ async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
 }
 
 fn time_message() -> String {
-    let now = chrono::offset::Local::now();
+    let now = chrono::Utc::now().with_timezone(&chrono_tz::Japan);
     let local_hour = now.hour();
     let weekday_str = ["月", "火", "水", "木", "金", "土", "日"];
     format!(
