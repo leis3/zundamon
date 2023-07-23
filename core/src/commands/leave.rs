@@ -16,7 +16,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     let manager = songbird::get(ctx).await.unwrap();
 
     let success =  manager.leave(guild_id).await.is_ok();
-    {
+    if success {
         let data_read = ctx.data.read().await;
         let connected = data_read.get::<ConnectedChannel>().unwrap();
         let mut lock = connected.lock().unwrap();
