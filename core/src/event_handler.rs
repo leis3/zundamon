@@ -196,20 +196,6 @@ impl EventHandler for Handler {
         let Some(channel_id) = old.channel_id else { return; };
         let Ok(Channel::Guild(channel)) = channel_id.to_channel(&ctx.http).await else { return; };
 
-        let Ok(members) = channel.members(&ctx.cache).await else { return; };
-        
-        if members.is_empty() || members.iter().all(|member| member.user.bot) {
-            let Some(guild_id) = old.guild_id else { return; };
-            let manager = songbird::get(&ctx).await.unwrap();
-            let _ = manager.leave(guild_id).await;
-            {
-                let data_read = ctx.data.read().await;
-                let connected = data_read.get::<ConnectedChannel>().unwrap();
-                let mut lock = connected.lock().unwrap();
-                lock.remove(&guild_id);
-            }
-        }
-
         // 自動退室か`/leave`コマンド以外でbotがVCから切断されたときに再接続する
         let self_id = ctx.cache.current_user_id();
         let name = channel_id.name(&ctx.cache).await.unwrap_or_default();
@@ -225,6 +211,20 @@ impl EventHandler for Handler {
                 info!("Reconnected to: {name}({channel_id})");
                 let manager = songbird::get(&ctx).await.unwrap();
                 let _ = manager.join(guild_id, connect_to).await;
+            }
+        }
+
+        let Ok(members) = channel.members(&ctx.cache).await else { return; };
+        
+        if members.is_empty() || members.iter().all(|member| member.user.bot) {
+            let Some(guild_id) = old.guild_id else { return; };
+            let manager = songbird::get(&ctx).await.unwrap();
+            let _ = manager.leave(guild_id).await;
+            {
+                let data_read = ctx.data.read().await;
+                let connected = data_read.get::<ConnectedChannel>().unwrap();
+                let mut lock = connected.lock().unwrap();
+                lock.remove(&guild_id);
             }
         }
     }
