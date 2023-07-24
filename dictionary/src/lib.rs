@@ -115,8 +115,10 @@ impl Dictionary {
         let mut text = {
             let mut s = String::new();
             for c in String::from_utf8(text_bytes)?.chars().map(|c| c.to_ascii_lowercase()) {
-                if unic_emoji_char::is_emoji(c) {
-                    s.push_str(&deunicode::deunicode_with_tofu(&c.to_string(), ""));
+                let t = any_ascii::any_ascii(&c.to_string());
+                // any_asciiでは絵文字は":grinning:"のようにコロンつきで変換され、区切り文字にはアンダーバーが使われる
+                if t.starts_with(':') && s.ends_with(':') {
+                    s.push_str(&t.replace(&['_', ':'], " ")[1..t.len() - 1]);
                 } else {
                     s.push(c);
                 }
@@ -145,7 +147,7 @@ impl Dictionary {
         for (key, value) in replace {
             text = text.replace(&key, &value);
         }
-        
+
         Ok(text)
     }
 }
