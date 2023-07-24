@@ -148,7 +148,7 @@ impl Dictionary {
             text = text.replace(&key, &value);
         }
 
-        Ok(text)
+        Ok(text.replace(' ', ""))
     }
 }
 
