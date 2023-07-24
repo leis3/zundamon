@@ -138,7 +138,10 @@ impl Dictionary {
                 replace.insert(key.clone(), value.clone());
             } else {
                 use wana_kana::ConvertJapanese;
-                replace.insert(m.as_str().to_string(), m.as_str().to_kana());
+                let kana = m.as_str().to_kana();
+                if kana.chars().all(|c| !c.is_ascii_alphabetic()) {
+                    replace.insert(m.as_str().to_string(), m.as_str().to_kana());
+                }
             }
         }
 
