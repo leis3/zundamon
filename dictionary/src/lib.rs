@@ -1,12 +1,13 @@
 mod eng_dic;
+mod util;
 
 use eng_dic::ENG_DIC;
+use util::{to_narrow, can_construct};
 use std::path::Path;
 use std::collections::{HashSet, HashMap};
 use anyhow::Result;
 use aho_corasick::AhoCorasick;
 use serde::{Serialize, Deserialize};
-use kanaria::utils::{AsciiUtils, WidthUtils};
 
 #[derive(Debug, Clone)]
 pub struct Dictionary {
@@ -21,14 +22,6 @@ pub struct DictItem {
     pub key: String,
     pub value: String,
     pub is_regex: bool
-}
-
-fn to_narrow(s: &str) -> String {
-    s.chars().map(|c| {
-        if AsciiUtils::is_wide_ascii(c) {
-            WidthUtils::convert_to_narrow(c).0
-        } else {c}
-    }).collect()
 }
 
 impl Dictionary {
@@ -118,7 +111,7 @@ impl Dictionary {
             text_bytes.splice(mat.start()..mat.end(), value.bytes());
         }
 
-        // 絵文字変換
+        // 絵文字変換 & 大文字を小文字に変換
         let mut text = {
             let mut s = String::new();
             for c in String::from_utf8(text_bytes)?.chars().map(|c| c.to_ascii_lowercase()) {
@@ -134,13 +127,17 @@ impl Dictionary {
         let re = regex::Regex::new("[a-z]+").unwrap();
         let mut replace = HashMap::new();
         for m in re.find_iter(&text) {
-            if let Some((key, value)) = ENG_DIC.get_key_value(m.as_str()) {
-                replace.insert(key.clone(), value.clone());
+            let s = m.as_str();
+            if let Some(words) = can_construct(&*ENG_DIC, s) {
+                for word in words {
+                    let read = ENG_DIC[&word].clone();
+                    replace.insert(word, read);
+                }
             } else {
                 use wana_kana::ConvertJapanese;
-                let kana = m.as_str().to_kana();
+                let kana = s.to_kana();
                 if kana.chars().all(|c| !c.is_ascii_alphabetic()) {
-                    replace.insert(m.as_str().to_string(), m.as_str().to_kana());
+                    replace.insert(s.to_string(), s.to_kana());
                 }
             }
         }
