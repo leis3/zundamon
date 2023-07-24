@@ -370,7 +370,7 @@ checksum = "8c1bba4f227a4a53d12b653f50ca7bf10c9119ae2aba56aff9e0338b5c98f36a"
 
 [[package]]
 name = "dictionary"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "aho-corasick",
  "anyhow",
