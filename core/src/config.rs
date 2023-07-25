@@ -10,6 +10,9 @@ pub const CONFIG_DIR: &str = "config";
 pub const CONFIG_FILE: &str = "config.json";
 pub const DICT_FILE: &str = "dictionary.json";
 
+// デフォルトはノーマルずんだもん
+fn default_speaker() -> u32 { 3 }
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config(HashMap<GuildId, GuildConfig>);
 
@@ -18,6 +21,8 @@ pub struct Config(HashMap<GuildId, GuildConfig>);
 pub struct GuildConfig {
     pub time_signal: bool,
     pub autojoin: bool,
+    #[serde(default = "default_speaker")]
+    pub speaker_id: u32,
     #[serde(skip)]
     pub dictionary: Dictionary
 }
