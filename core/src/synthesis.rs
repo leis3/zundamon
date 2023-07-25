@@ -20,8 +20,12 @@ static VOICEVOX_CORE: Lazy<VoicevoxCore> = Lazy::new(|| {
 });
 
 /// VOICEVOX COREで音声を合成する。
-pub fn synthesis(text: &str) -> Result<Vec<u8>, ResultCode> {
-    let wav = VOICEVOX_CORE.tts_simple(text, 3)?;
+pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
+    if VOICEVOX_CORE.is_model_loaded(speaker_id) {
+        VOICEVOX_CORE.load_model(speaker_id).unwrap();
+    }
+    
+    let wav = VOICEVOX_CORE.tts_simple(text, speaker_id)?;
 
     Ok(wav.as_slice().to_vec())
 }

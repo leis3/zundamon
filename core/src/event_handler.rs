@@ -254,7 +254,13 @@ async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
     let Some(handle) = manager.get(guild_id) else {
         anyhow::bail!("Failed to retrieve Call handler");
     };
-    let Ok(data) = synthesis::synthesis(text) else {
+    let speaker_id = {
+        let data_read = ctx.data.read().await;
+        let config = data_read.get::<ConfigData>().unwrap();
+        let mut config_lock = config.lock().unwrap();
+        config_lock.guild_config(guild_id).speaker_id
+    };
+    let Ok(data) = synthesis::synthesis(text, speaker_id) else {
         anyhow::bail!("Failed to synthesis");
     };
     let input = synthesis::ffmpeg(&data);
