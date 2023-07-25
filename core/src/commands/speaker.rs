@@ -28,7 +28,9 @@ static SPEAKERS: Lazy<BTreeMap<String, Vec<Speaker>>> = Lazy::new(|| {
         return BTreeMap::new();
     };
     let mut map: BTreeMap<String, Vec<Speaker>> = BTreeMap::new();
-    for speaker in speakers {
+    // TODO: 仕様上セレクトメニューは25項目までなのでmetas.jsonのモデルをすべて含めるのを諦めるか
+    //       話者選択でのページングを実装する必要がある
+    for speaker in speakers.into_iter().take(25) {
         let styles = speaker.get("styles").unwrap().as_array().unwrap();
         for value in styles {
             let name = speaker.get("name").unwrap().as_str().unwrap().to_string();
