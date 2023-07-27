@@ -278,8 +278,8 @@ fn time_message() -> String {
         "{}{}{}時をお知らせします。",
         if local_hour == 0 {
             format!("{}月{}日{}曜日 ",
-                now.day(),
                 now.month(),
+                now.day(),
                 weekday_str[now.weekday().number_from_monday() as usize - 1]
             )
         } else {"".into()},
