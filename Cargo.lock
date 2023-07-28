@@ -382,6 +382,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "unicode-segmentation",
  "wana_kana",
 ]
 

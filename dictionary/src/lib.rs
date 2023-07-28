@@ -8,6 +8,7 @@ use std::collections::{HashSet, HashMap};
 use anyhow::Result;
 use aho_corasick::AhoCorasick;
 use serde::{Serialize, Deserialize};
+use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(Debug, Clone)]
 pub struct Dictionary {
@@ -114,13 +115,17 @@ impl Dictionary {
         // 絵文字変換 & 大文字を小文字に変換
         let mut text = {
             let mut s = String::new();
-            for c in String::from_utf8(text_bytes)?.chars().map(|c| c.to_ascii_lowercase()) {
-                let t = any_ascii::any_ascii(&c.to_string());
-                // any_asciiでは絵文字は":grinning:"のようにコロンつきで変換され、区切り文字にはアンダーバーが使われる
-                if t.starts_with(':') && s.ends_with(':') {
-                    s.push_str(&t.replace(&['_', ':'], " ")[1..t.len() - 1]);
+            let text = String::from_utf8(text_bytes)?;
+            // UAX#29の規則に従って、Grapheme Clusterの境界で文字列を分割する
+            // これにより4バイトを超えるような絵文字等を1文字として分割できる
+            for c in text.graphemes(true).map(|c| c.to_ascii_lowercase()) {
+                let ascii = any_ascii::any_ascii(&c);
+                // any_asciiでは絵文字は":grinning:"のようにコロンつきで変換される
+                // 例: 👨‍👩‍👦‍👦 -> :man::woman::boy::boy:
+                if ascii.starts_with(':') && ascii.ends_with(':') && ascii.len() > 1 {
+                    s.push_str(&ascii.replace(":", " "));
                 } else {
-                    s.push(c);
+                    s.push_str(&c);
                 }
             }
             s
