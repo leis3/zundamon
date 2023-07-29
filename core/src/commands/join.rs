@@ -1,6 +1,7 @@
 use crate::{TextChannelId, ConnectedChannel};
 use crate::debug;
 use serenity::prelude::*;
+use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::channel::ChannelType;
 use serenity::model::application::{
@@ -13,6 +14,28 @@ use serenity::model::application::{
         }
     }
 };
+use songbird::{
+    Event,
+    EventContext,
+    EventHandler as VoiceEventHandler,
+    events::CoreEvent
+};
+
+#[derive(Debug)]
+struct DisconnectHandler;
+
+#[async_trait]
+impl VoiceEventHandler for DisconnectHandler {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        match ctx {
+            EventContext::DriverDisconnect(data) => {
+                debug!(kind = ?data.kind, reason = ?data.reason, "Songbird DriverDisconnect Event");
+            },
+            _ => {}
+        }
+        Some(Event::Core(CoreEvent::DriverDisconnect))
+    }
+}
 
 async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
     let options = &interaction.data.options;
@@ -37,8 +60,13 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     };
 
     let manager = songbird::get(ctx).await.unwrap();
-    if manager.join(guild_id, connect_to).await.1.is_err() {
+    let (handle, result) = manager.join(guild_id, connect_to).await;
+    if result.is_err() {
         return Err("接続に失敗しました。");
+    }
+    {
+        let mut lock = handle.lock().await;
+        lock.add_global_event(Event::Core(CoreEvent::DriverDisconnect), DisconnectHandler);
     }
 
     // メッセージを読むテキストチャンネルを設定する

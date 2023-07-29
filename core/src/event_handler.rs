@@ -199,25 +199,6 @@ impl EventHandler for Handler {
 
         let Some(channel_id) = old.channel_id else { return; };
         let Ok(Channel::Guild(channel)) = channel_id.to_channel(&ctx.http).await else { return; };
-
-        // 自動退室か`/leave`コマンド以外でbotがVCから切断されたときに再接続する
-        let self_id = ctx.cache.current_user_id();
-        let name = channel_id.name(&ctx.cache).await.unwrap_or_default();
-        let connected_channel = {
-            let data_read = ctx.data.read().await;
-            let connected = data_read.get::<ConnectedChannel>().unwrap();
-            let lock = connected.lock().unwrap();
-            lock.get(&guild_id).cloned()
-        };
-        if old.user_id == self_id && new.channel_id.is_none() {
-            info!("Left from: {name}({channel_id})");
-            if let Some(connect_to) = connected_channel {
-                info!("Reconnected to: {name}({channel_id})");
-                let manager = songbird::get(&ctx).await.unwrap();
-                let _ = manager.join(guild_id, connect_to).await;
-            }
-        }
-
         let Ok(members) = channel.members(&ctx.cache).await else { return; };
         
         if members.is_empty() || members.iter().all(|member| member.user.bot) {
