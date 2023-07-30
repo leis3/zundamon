@@ -1,6 +1,6 @@
 use crate::commands;
 use crate::synthesis;
-use crate::{error, info};
+use crate::error;
 use crate::type_map::{TextChannelId, ConfigData, ConnectedChannel};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

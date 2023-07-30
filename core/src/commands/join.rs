@@ -1,8 +1,10 @@
 use crate::{TextChannelId, ConnectedChannel};
 use crate::debug;
+use std::sync::Arc;
 use serenity::prelude::*;
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
+use serenity::model::id::GuildId;
 use serenity::model::channel::ChannelType;
 use serenity::model::application::{
     command::CommandOptionType,
@@ -21,15 +23,32 @@ use songbird::{
     events::CoreEvent
 };
 
-#[derive(Debug)]
-struct DisconnectHandler;
+struct DisconnectHandler {
+    ctx: Context
+}
 
 #[async_trait]
 impl VoiceEventHandler for DisconnectHandler {
-    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
-        match ctx {
+    async fn act(&self, vctx: &EventContext<'_>) -> Option<Event> {
+        match vctx {
             EventContext::DriverDisconnect(data) => {
                 debug!(kind = ?data.kind, reason = ?data.reason, "Songbird DriverDisconnect Event");
+
+                // 正常な切断でない場合は再接続を試みる
+                let guild_id = GuildId::from(data.guild_id.0);
+                let connected = {
+                    let data_read = self.ctx.data.read().await;
+                    let connected = data_read.get::<ConnectedChannel>().unwrap();
+                    let lock = connected.lock().unwrap();
+                    lock.get(&guild_id).cloned()
+                };
+                if let Some(channel_id) = connected {
+                    let manager = songbird::get(&self.ctx).await.unwrap();
+                    let _ = manager.join(guild_id, channel_id).await;
+                }
+            },
+            EventContext::DriverReconnect(data) => {
+                debug!(channel_id = ?data.channel_id, "Songbird DriverReconnect Ecent");
             },
             _ => {}
         }
@@ -66,7 +85,7 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     }
     {
         let mut lock = handle.lock().await;
-        lock.add_global_event(Event::Core(CoreEvent::DriverDisconnect), DisconnectHandler);
+        lock.add_global_event(Event::Core(CoreEvent::DriverDisconnect), DisconnectHandler { ctx: ctx.clone() });
     }
 
     // メッセージを読むテキストチャンネルを設定する
