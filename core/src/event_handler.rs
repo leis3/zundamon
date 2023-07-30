@@ -1,11 +1,11 @@
 use crate::commands;
 use crate::synthesis;
-use crate::error;
 use crate::type_map::{TextChannelId, ConfigData, ConnectedChannel};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use chrono::{Timelike, Datelike};
 use anyhow::Result;
+use tracing::error;
 use serenity::{
     async_trait,
     prelude::*,

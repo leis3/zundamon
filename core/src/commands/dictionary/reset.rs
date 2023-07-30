@@ -1,5 +1,5 @@
 use crate::ConfigData;
-use crate::debug;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::model::application::{

@@ -1,5 +1,5 @@
-use crate::debug;
 use crate::type_map::ConnectedChannel;
+use tracing::debug;
 use serenity::Result;
 use serenity::prelude::*;
 use serenity::builder::CreateApplicationCommand;

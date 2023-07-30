@@ -1,84 +1,36 @@
 use std::io::Write;
+use std::fs::File;
+use std::path::Path;
 use std::sync::Mutex;
-use once_cell::sync::OnceCell;
-use anyhow::Result;
-use serenity::{
-    http::Http,
-    model::webhook::Webhook
-};
+use chrono::Datelike;
+use once_cell::sync::Lazy;
 
-pub static LOG_WEBHOOK: OnceCell<String> = OnceCell::new();
-
-pub static BUF: OnceCell<Mutex<Vec<u8>>> = OnceCell::new();
+static LOG_FILE: Lazy<Mutex<File>> = Lazy::new(|| {
+    let log_dir = Path::new("logs");
+    if !log_dir.exists() {
+        std::fs::create_dir(log_dir).unwrap();
+    }
+    let now = chrono::Utc::now().with_timezone(&chrono_tz::Japan);
+    let filename = format!("{}-{:02}-{:02}.log", now.year(), now.month(), now.day());
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(log_dir.join(filename))
+        .unwrap();
+    Mutex::new(file)
+});
 
 pub struct LogWriter;
 
 impl Write for LogWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let mut lock = BUF.get_or_init(|| Mutex::new(Vec::new())).lock().unwrap();
-        lock.write(buf)
+        let mut file = LOG_FILE.lock().unwrap();
+        writeln!(file, "{}", String::from_utf8(buf.to_vec()).unwrap())?;
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        let mut lock = BUF.get_or_init(|| Mutex::new(Vec::new())).lock().unwrap();
-        lock.flush()
+        Ok(())
     }
-}
-
-pub async fn send_log() -> Result<()> {
-    let content = {
-        let Some(m) = BUF.get() else {
-            anyhow::bail!("Nothing is logged");
-        };
-        let mut lock = m.lock().unwrap();
-        let data = lock.drain(..).collect::<Vec<_>>();
-        let striped = strip_ansi_escapes::strip(data)?;
-        String::from_utf8(striped)?
-    };
-    if let Some(url) = LOG_WEBHOOK.get() {
-        let http = Http::new("");
-        let webhook = Webhook::from_url(&http, url).await?;
-        webhook.execute(&http, false, |w| w.content(content)).await?;
-    }
-    Ok(())
-}
-
-#[macro_export]
-macro_rules! trace {
-    ($($arg:tt)*) => {
-        tracing::trace!($($arg)*);
-        let _ = $crate::log::send_log().await;
-    };
-}
-
-#[macro_export]
-macro_rules! debug {
-    ($($arg:tt)*) => {
-        tracing::debug!($($arg)*);
-        let _ = $crate::log::send_log().await;
-    };
-}
-
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {
-        tracing::info!($($arg)*);
-        let _ = $crate::log::send_log().await;
-    };
-}
-
-#[macro_export]
-macro_rules! warn {
-    ($($arg:tt)*) => {
-        tracing::warn!($($arg)*);
-        let _ = $crate::log::send_log().await;
-    };
-}
-
-#[macro_export]
-macro_rules! error {
-    ($($arg:tt)*) => {
-        tracing::error!($($arg)*);
-        let _ = $crate::log::send_log().await;
-    };
 }

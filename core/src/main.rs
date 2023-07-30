@@ -10,48 +10,28 @@ use event_handler::Handler;
 use type_map::{TextChannelId, ConfigData, ConnectedChannel};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
-use songbird::SerenityInit;
-use structopt::StructOpt;
-use tracing_subscriber::Layer;
+use tracing::{error, info};
 use tracing_subscriber::prelude::*;
-use serenity::{
-    prelude::*,
-    model::prelude::*
-};
-
-
-
-#[derive(Debug, StructOpt)]
-struct Opt {
-    /// Discord Webhoook URL to send logs to
-    #[structopt(short, long)]
-    pub log_webhook: Option<String>
-}
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::fmt::time::OffsetTime;
+use songbird::SerenityInit;
+use serenity::prelude::*;
 
 #[tokio::main]
 async fn main() {
-    let opt = Opt::from_args();
-
-    if let Some(url) = &opt.log_webhook {
-        log::LOG_WEBHOOK.get_or_init(|| url.clone());
-        let layer = tracing_subscriber::fmt::layer()
-            .map_writer(|_| || log::LogWriter)
-            .without_time()
-            .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
-                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
-            }));
-        tracing_subscriber::registry()
-            .with(layer)
-            .init();
-    } else {
-        let layer = tracing_subscriber::fmt::layer()
-            .with_filter(tracing_subscriber::filter::filter_fn(|metadata| {
-                metadata.target().contains("zundamon") && metadata.level() <= &tracing::Level::DEBUG
-            }));
-        tracing_subscriber::registry()
-            .with(layer)
-            .init();
-    }
+    let layer = tracing_subscriber::fmt::layer()
+        .map_writer(|_| || log::LogWriter)
+        .with_ansi(false)
+        .with_timer(
+            OffsetTime::new(time::macros::offset!(+9),
+            time::macros::format_description!("[hour]:[minute]:[second]"))
+        )
+        .json()
+        .pretty();
+    tracing_subscriber::registry()
+        .with(layer)
+        .with(EnvFilter::from_default_env())
+        .init();
 
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 

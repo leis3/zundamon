@@ -1,6 +1,6 @@
 use crate::ConfigData;
-use crate::debug;
 use std::collections::BTreeMap;
+use tracing::debug;
 use once_cell::sync::Lazy;
 use serenity::prelude::*;
 use serenity::Result;

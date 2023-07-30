@@ -1,5 +1,5 @@
 use crate::{TextChannelId, ConnectedChannel};
-use crate::debug;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;

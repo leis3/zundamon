@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::ConfigData;
-use crate::debug;
 use dictionary::DictItem;
+use tracing::debug;
 use serenity::prelude::*;
 use serenity::Result;
 use serenity::utils::Color;
