@@ -1,5 +1,5 @@
 use crate::{TextChannelId, ConnectedChannel};
-use tracing::debug;
+use tracing::{debug, error};
 use serenity::prelude::*;
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
@@ -31,7 +31,12 @@ impl VoiceEventHandler for DisconnectHandler {
     async fn act(&self, vctx: &EventContext<'_>) -> Option<Event> {
         match vctx {
             EventContext::DriverDisconnect(data) => {
-                debug!(kind = ?data.kind, reason = ?data.reason, "Songbird DriverDisconnect Event");
+                debug!(
+                    kind = ?data.kind,
+                    reason = ?data.reason,
+                    channel_id = ?data.channel_id,
+                    "Songbird DriverDisconnect"
+                );
 
                 // 正常な切断でない場合は再接続を試みる
                 let guild_id = GuildId::from(data.guild_id.0);
@@ -43,11 +48,14 @@ impl VoiceEventHandler for DisconnectHandler {
                 };
                 if let Some(channel_id) = connected {
                     let manager = songbird::get(&self.ctx).await.unwrap();
-                    let _ = manager.join(guild_id, channel_id).await;
+                    let (_, result) = manager.join(guild_id, channel_id).await;
+                    if let Err(why) = result {
+                        error!(channel_id=%channel_id, "Failed to reconnect to voice channel: {why:?}");
+                    }
                 }
             },
             EventContext::DriverReconnect(data) => {
-                debug!(channel_id = ?data.channel_id, "Songbird DriverReconnect Ecent");
+                debug!(channel_id = ?data.channel_id, "Songbird DriverReconnect");
             },
             _ => {}
         }
