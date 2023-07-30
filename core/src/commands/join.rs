@@ -1,6 +1,5 @@
 use crate::{TextChannelId, ConnectedChannel};
 use crate::debug;
-use std::sync::Arc;
 use serenity::prelude::*;
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;

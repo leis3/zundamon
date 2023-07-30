@@ -30,13 +30,6 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         match interaction {
             Interaction::ApplicationCommand(command) => {
-                let span = tracing::debug_span!(
-                    "Command",
-                    guild_id = command.guild_id.map(|e| e.0),
-                    channel_id = command.channel_id.0,
-                    user = format!("{}({})", command.user.name, command.user.id.0)
-                );
-                let _enter = span.enter();
                 if let Err(why) = match command.data.name.as_str() {
                     "join" => commands::join::run(&ctx, &command).await,
                     "leave" => commands::leave::run(&ctx, &command).await,
