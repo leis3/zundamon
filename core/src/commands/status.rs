@@ -10,7 +10,7 @@ use serenity::model::application::interaction::{
 pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<()> {
     debug!("/status");
 
-    let manager = songbird::get(&ctx).await.unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
     let call = interaction.guild_id.and_then(|id| manager.get(id));
     let channel = {
         if let Some(call) = call {

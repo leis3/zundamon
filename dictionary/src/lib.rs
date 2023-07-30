@@ -123,7 +123,7 @@ impl Dictionary {
                 // any_asciiでは絵文字は":grinning:"のようにコロンつきで変換される
                 // 例: 👨‍👩‍👦‍👦 -> :man::woman::boy::boy:
                 if ascii.starts_with(':') && ascii.ends_with(':') && ascii.len() > 1 {
-                    s.push_str(&ascii.replace(":", " "));
+                    s.push_str(&ascii.replace(':', " "));
                 } else {
                     s.push_str(&c);
                 }
@@ -135,7 +135,7 @@ impl Dictionary {
         let mut replace = HashMap::new();
         for m in re.find_iter(&text) {
             let s = m.as_str();
-            if let Some(words) = can_construct(&*ENG_DIC, s) {
+            if let Some(words) = can_construct(&ENG_DIC, s) {
                 for word in words {
                     let read = ENG_DIC[&word].clone();
                     replace.insert(word, read);

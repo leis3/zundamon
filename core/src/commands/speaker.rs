@@ -109,7 +109,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         let config = data_read.get::<ConfigData>().unwrap();
         let mut config_lock = config.lock().unwrap();
         let speaker = &mut config_lock.guild_config_mut(guild_id).speaker_id;
-        *speaker = speaker_id as u32;
+        *speaker = speaker_id;
     }
 
     let speaker = SPEAKERS[selected_name].iter().find(|s| s.id == speaker_id).unwrap();
