@@ -1,6 +1,4 @@
-use crate::config::{CONFIG_DIR, GLOBAL_CONFIG_FILE, GlobalConfig};
-use std::path::Path;
-use std::io::Write;
+use crate::config::GlobalConfig;
 use anyhow::Result;
 use serenity::model::prelude::UserId;
 use structopt::StructOpt;

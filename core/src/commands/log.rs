@@ -34,7 +34,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
 
     debug!(date = %date, "/log");
 
-    if !regex::Regex::new("^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$").unwrap().is_match(&date) {
+    if !regex::Regex::new("^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$").unwrap().is_match(date) {
         return interaction.create_interaction_response(&ctx.http, |response| {
             response.kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {

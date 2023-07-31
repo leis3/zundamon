@@ -24,7 +24,7 @@ impl GlobalConfig {
         let dir = Path::new(CONFIG_DIR);
         let config_path = dir.join(GLOBAL_CONFIG_FILE);
         if !config_path.exists() {
-            std::fs::create_dir_all(&dir)?;
+            std::fs::create_dir_all(dir)?;
             let mut file = std::fs::File::create(&config_path)?;
             let config = GlobalConfig::default();
             writeln!(file, "{}", serde_json::to_string_pretty(&config)?)?;
