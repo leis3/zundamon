@@ -7,3 +7,4 @@ pub mod time_signal;
 pub mod autojoin;
 pub mod status;
 pub mod speaker;
+pub mod log;

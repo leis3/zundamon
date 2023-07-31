@@ -40,6 +40,7 @@ impl EventHandler for Handler {
                     "autojoin" => commands::autojoin::run(&ctx, &command).await,
                     "status" => commands::status::run(&ctx, &command).await,
                     "speaker" => commands::speaker::run(&ctx, &command).await,
+                    "log" => commands::log::run(&ctx, &command).await,
                     _ => unimplemented!()
                 } {
                     error!("Cannot respond to slash command: {why}");
@@ -69,6 +70,7 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::autojoin::register(cmd))
                     .create_application_command(|cmd| commands::status::register(cmd))
                     .create_application_command(|cmd| commands::speaker::register(cmd))
+                    .create_application_command(|cmd| commands::log::register(cmd))
             }).await.unwrap();
 
             {
