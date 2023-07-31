@@ -2,16 +2,44 @@ use dictionary::Dictionary;
 use std::io::Write;
 use std::path::Path;
 use std::collections::HashMap;
-use serenity::model::prelude::GuildId;
+use serenity::model::prelude::{GuildId, UserId};
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
 
 pub const CONFIG_DIR: &str = "config";
 pub const CONFIG_FILE: &str = "config.json";
 pub const DICT_FILE: &str = "dictionary.json";
+pub const GLOBAL_CONFIG_FILE: &str = "global_config.json";
 
 // デフォルトはノーマルずんだもん
 fn default_speaker() -> u32 { 3 }
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct GlobalConfig {
+    pub admin_user: Vec<UserId>
+}
+
+impl GlobalConfig {
+    pub fn load() -> Result<Self> {
+        let dir = Path::new(CONFIG_DIR);
+        let config_path = dir.join(GLOBAL_CONFIG_FILE);
+        if !config_path.exists() {
+            std::fs::create_dir_all(&dir)?;
+            let mut file = std::fs::File::create(&config_path)?;
+            let config = GlobalConfig::default();
+            writeln!(file, "{}", serde_json::to_string_pretty(&config)?)?;
+        }
+        let config = std::fs::read_to_string(&config_path)?;
+        Ok(serde_json::from_str(&config)?)
+    }
+
+    pub fn save(&self) -> Result<()> {
+        let path = Path::new(CONFIG_DIR).join(GLOBAL_CONFIG_FILE);
+        let mut file = std::fs::File::create(path)?;
+        writeln!(file, "{}", serde_json::to_string_pretty(&self)?)?;
+        Ok(())
+    }
+}
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config(HashMap<GuildId, GuildConfig>);

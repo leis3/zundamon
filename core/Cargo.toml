@@ -20,6 +20,7 @@ tracing-subscriber = { version = "0.3.17", features = ["fmt", "json", "time"] }
 vvcore = "0.0.2"
 chrono-tz = "0.8.3"
 time = { version = "0.3.23", features = ["macros"] }
+structopt = "0.3.26"
 
 [dependencies.serenity]
 version = "0.11.5"

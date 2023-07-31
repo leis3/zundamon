@@ -4,6 +4,7 @@ mod config;
 mod log;
 mod event_handler;
 mod type_map;
+mod opt;
 
 use config::Config;
 use event_handler::Handler;
@@ -16,9 +17,21 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::time::OffsetTime;
 use songbird::SerenityInit;
 use serenity::prelude::*;
+use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() {
+    let opt = opt::Opt::from_args();
+    // サブコマンド
+    if let Some(cmd) = opt.cmd {
+        match cmd {
+            opt::Command::Config(config_opt) => {
+                opt::config(config_opt).unwrap();
+            }
+        }
+        return;
+    }
+
     let layer = tracing_subscriber::fmt::layer()
         .map_writer(|_| || log::LogWriter)
         .with_ansi(false)
