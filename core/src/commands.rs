@@ -4,7 +4,6 @@ pub mod version;
 pub mod skip;
 pub mod dictionary;
 pub mod time_signal;
-pub mod autojoin;
 pub mod status;
 pub mod speaker;
 pub mod log;

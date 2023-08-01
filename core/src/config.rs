@@ -48,7 +48,6 @@ pub struct Config(HashMap<GuildId, GuildConfig>);
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct GuildConfig {
     pub time_signal: bool,
-    pub autojoin: bool,
     #[serde(default = "default_speaker")]
     pub speaker_id: u32,
     #[serde(skip)]

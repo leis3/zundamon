@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use chrono::{Timelike, Datelike};
 use anyhow::Result;
-use tracing::error;
+use tracing::{error, info};
 use serenity::{
     async_trait,
     prelude::*,
@@ -37,7 +37,6 @@ impl EventHandler for Handler {
                     "skip" => commands::skip::run(&ctx, &command).await,
                     "dictionary" => commands::dictionary::run(&ctx, &command).await,
                     "time-signal" => commands::time_signal::run(&ctx, &command).await,
-                    "autojoin" => commands::autojoin::run(&ctx, &command).await,
                     "status" => commands::status::run(&ctx, &command).await,
                     "speaker" => commands::speaker::run(&ctx, &command).await,
                     "log" => commands::log::run(&ctx, &command).await,
@@ -67,7 +66,6 @@ impl EventHandler for Handler {
                     .create_application_command(|cmd| commands::skip::register(cmd))
                     .create_application_command(|cmd| commands::dictionary::register(cmd))
                     .create_application_command(|cmd| commands::time_signal::register(cmd))
-                    .create_application_command(|cmd| commands::autojoin::register(cmd))
                     .create_application_command(|cmd| commands::status::register(cmd))
                     .create_application_command(|cmd| commands::speaker::register(cmd))
                     .create_application_command(|cmd| commands::log::register(cmd))
@@ -164,31 +162,7 @@ impl EventHandler for Handler {
     }
 
     /// 非botのユーザーが全員VCを抜けたら自動的に切断する
-    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
-        // 自動入室
-        let Some(guild_id) = new.guild_id else { return; };
-        let autojoin = {
-            let data_read = ctx.data.read().await;
-            let config = data_read.get::<ConfigData>().unwrap();
-            let mut config_lock = config.lock().unwrap();
-            config_lock.guild_config(guild_id).autojoin
-        };
-        if autojoin && old.is_none() {
-            if let Some(connect_to) = new.channel_id {
-                let manager = songbird::get(&ctx).await.unwrap();
-                let _ = manager.join(guild_id, connect_to).await;
-                {
-                    let data_read = ctx.data.read().await;
-                    let channel_id = data_read.get::<TextChannelId>().unwrap();
-                    let mut lock = channel_id.lock().unwrap();
-                    lock.insert(guild_id, connect_to);
-                    let connected = data_read.get::<ConnectedChannel>().unwrap();
-                    let mut lock = connected.lock().unwrap();
-                    lock.insert(guild_id, connect_to);
-                }
-            }
-        }
-
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, _new: VoiceState) {
         // 自動退室
         let Some(old) = old else { return; };
 
@@ -197,6 +171,7 @@ impl EventHandler for Handler {
         let Ok(members) = channel.members(&ctx.cache).await else { return; };
         
         if members.is_empty() || members.iter().all(|member| member.user.bot) {
+            info!("auto disconnect");
             let Some(guild_id) = old.guild_id else { return; };
             let manager = songbird::get(&ctx).await.unwrap();
             let _ = manager.leave(guild_id).await;
@@ -209,7 +184,8 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn resume(&self, ctx: Context, _: ResumedEvent) {
+    async fn resume(&self, ctx: Context, resumed_event: ResumedEvent) {
+        info!(resumed_event = ?resumed_event, "resume event");
         let connected = {
             let data_read = ctx.data.read().await;
             let connected = data_read.get::<ConnectedChannel>().unwrap();
