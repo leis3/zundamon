@@ -22,6 +22,7 @@ use songbird::{
     events::CoreEvent
 };
 
+/*
 struct DisconnectHandler {
     ctx: Context
 }
@@ -69,6 +70,7 @@ impl VoiceEventHandler for DisconnectHandler {
         Some(Event::Core(CoreEvent::DriverDisconnect))
     }
 }
+*/
 
 async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
     let options = &interaction.data.options;
@@ -93,14 +95,16 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     };
 
     let manager = songbird::get(ctx).await.unwrap();
-    let (handle, result) = manager.join(guild_id, connect_to).await;
+    let (_handle, result) = manager.join(guild_id, connect_to).await;
     if result.is_err() {
         return Err("接続に失敗しました。");
     }
+    /*
     {
         let mut lock = handle.lock().await;
         lock.add_global_event(Event::Core(CoreEvent::DriverDisconnect), DisconnectHandler { ctx: ctx.clone() });
     }
+    */
 
     // メッセージを読むテキストチャンネルを設定する
     {

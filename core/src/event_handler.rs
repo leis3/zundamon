@@ -162,25 +162,33 @@ impl EventHandler for Handler {
     }
 
     /// 非botのユーザーが全員VCを抜けたら自動的に切断する
-    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, _new: VoiceState) {
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
         // 自動退室
-        let Some(old) = old else { return; };
 
-        let Some(channel_id) = old.channel_id else { return; };
-        let Ok(Channel::Guild(channel)) = channel_id.to_channel(&ctx.http).await else { return; };
-        let Ok(members) = channel.members(&ctx.cache).await else { return; };
-        
-        if members.is_empty() || members.iter().all(|member| member.user.bot) {
-            let names = members.iter().map(|member| member.user.name.clone()).collect::<Vec<_>>();
-            info!(members = ?names, "auto disconnect");
-            let Some(guild_id) = old.guild_id else { return; };
-            let manager = songbird::get(&ctx).await.unwrap();
-            let _ = manager.leave(guild_id).await;
-            {
-                let data_read = ctx.data.read().await;
-                let connected = data_read.get::<ConnectedChannel>().unwrap();
-                let mut lock = connected.lock().unwrap();
-                lock.remove(&guild_id);
+        let Some(guild_id) = new.guild_id else { return; };
+        let Some(voice_channel) = ({
+            let data_read = ctx.data.read().await;
+            let connected = data_read.get::<ConnectedChannel>().unwrap();
+            let lock = connected.lock().unwrap();
+            lock.get(&guild_id).cloned()
+        }) else { return; };
+
+        // VCから退出あるいは別のVCに移動
+        if old.and_then(|state| state.channel_id) == Some(voice_channel) &&
+            !new.channel_id.map_or(false, |id| id == voice_channel)
+        {
+            let Ok(Channel::Guild(channel)) = voice_channel.to_channel(&ctx.http).await else { return; };
+            let Ok(members) = channel.members(&ctx.cache).await else { return; };
+            if members.is_empty() || members.iter().all(|member| member.user.bot) {
+                info!("auto disconnect");
+                let manager = songbird::get(&ctx).await.unwrap();
+                let _ = manager.leave(guild_id).await;
+                {
+                    let data_read = ctx.data.read().await;
+                    let connected = data_read.get::<ConnectedChannel>().unwrap();
+                    let mut lock = connected.lock().unwrap();
+                    lock.remove(&guild_id);
+                }
             }
         }
     }
