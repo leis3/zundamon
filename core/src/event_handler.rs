@@ -171,7 +171,8 @@ impl EventHandler for Handler {
         let Ok(members) = channel.members(&ctx.cache).await else { return; };
         
         if members.is_empty() || members.iter().all(|member| member.user.bot) {
-            info!("auto disconnect");
+            let names = members.iter().map(|member| member.user.name.clone()).collect::<Vec<_>>();
+            info!(members = ?names, "auto disconnect");
             let Some(guild_id) = old.guild_id else { return; };
             let manager = songbird::get(&ctx).await.unwrap();
             let _ = manager.leave(guild_id).await;

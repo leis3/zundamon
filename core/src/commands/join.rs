@@ -3,7 +3,7 @@ use tracing::{debug, error};
 use serenity::prelude::*;
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
-use serenity::model::id::GuildId;
+use serenity::model::id::{UserId, GuildId};
 use serenity::model::channel::ChannelType;
 use serenity::model::application::{
     command::CommandOptionType,
@@ -56,6 +56,13 @@ impl VoiceEventHandler for DisconnectHandler {
             },
             EventContext::DriverReconnect(data) => {
                 debug!(channel_id = ?data.channel_id, "Songbird DriverReconnect");
+            },
+            EventContext::ClientDisconnect(data) => {
+                if let Ok(user) = UserId(data.user_id.0).to_user(&self.ctx.http).await {
+                    debug!(user = %user.name, "Client Disconnect");
+                } else {
+                    debug!(user_id = %data.user_id, "Client Disconnect");
+                }
             },
             _ => {}
         }
