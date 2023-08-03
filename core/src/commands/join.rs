@@ -1,9 +1,7 @@
 use crate::{TextChannelId, ConnectedChannel};
-use tracing::{debug, error};
+use tracing::debug;
 use serenity::prelude::*;
-use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
-use serenity::model::id::{UserId, GuildId};
 use serenity::model::channel::ChannelType;
 use serenity::model::application::{
     command::CommandOptionType,
@@ -15,62 +13,6 @@ use serenity::model::application::{
         }
     }
 };
-use songbird::{
-    Event,
-    EventContext,
-    EventHandler as VoiceEventHandler,
-    events::CoreEvent
-};
-
-/*
-struct DisconnectHandler {
-    ctx: Context
-}
-
-#[async_trait]
-impl VoiceEventHandler for DisconnectHandler {
-    async fn act(&self, vctx: &EventContext<'_>) -> Option<Event> {
-        match vctx {
-            EventContext::DriverDisconnect(data) => {
-                debug!(
-                    kind = ?data.kind,
-                    reason = ?data.reason,
-                    channel_id = ?data.channel_id,
-                    "Songbird DriverDisconnect"
-                );
-
-                // 正常な切断でない場合は再接続を試みる
-                let guild_id = GuildId::from(data.guild_id.0);
-                let connected = {
-                    let data_read = self.ctx.data.read().await;
-                    let connected = data_read.get::<ConnectedChannel>().unwrap();
-                    let lock = connected.lock().unwrap();
-                    lock.get(&guild_id).cloned()
-                };
-                if let Some(channel_id) = connected {
-                    let manager = songbird::get(&self.ctx).await.unwrap();
-                    let (_, result) = manager.join(guild_id, channel_id).await;
-                    if let Err(why) = result {
-                        error!(channel_id=%channel_id, "Failed to reconnect to voice channel: {why:?}");
-                    }
-                }
-            },
-            EventContext::DriverReconnect(data) => {
-                debug!(channel_id = ?data.channel_id, "Songbird DriverReconnect");
-            },
-            EventContext::ClientDisconnect(data) => {
-                if let Ok(user) = UserId(data.user_id.0).to_user(&self.ctx.http).await {
-                    debug!(user = %user.name, "Client Disconnect");
-                } else {
-                    debug!(user_id = %data.user_id, "Client Disconnect");
-                }
-            },
-            _ => {}
-        }
-        Some(Event::Core(CoreEvent::DriverDisconnect))
-    }
-}
-*/
 
 async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -> Result<impl ToString, impl ToString> {
     let options = &interaction.data.options;
@@ -99,12 +41,6 @@ async fn run_inner(ctx: &Context, interaction: &ApplicationCommandInteraction) -
     if result.is_err() {
         return Err("接続に失敗しました。");
     }
-    /*
-    {
-        let mut lock = handle.lock().await;
-        lock.add_global_event(Event::Core(CoreEvent::DriverDisconnect), DisconnectHandler { ctx: ctx.clone() });
-    }
-    */
 
     // メッセージを読むテキストチャンネルを設定する
     {
