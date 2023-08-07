@@ -20,8 +20,13 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
     }).collect::<HashMap<_, _>>();
 
     let CommandDataOptionValue::String(key) = map["単語"].clone() else { panic!() };
-    let CommandDataOptionValue::String(value) = map["読み"].clone() else { panic!() };
-    let CommandDataOptionValue::Boolean(is_regex) = **map.get("正規表現").unwrap_or(&&CommandDataOptionValue::Boolean(false)) else { panic!() };
+    let CommandDataOptionValue::String(value) = map.get("読み")
+        .map(|s| s.to_owned().to_owned())
+        .unwrap_or(CommandDataOptionValue::String(String::new()))
+        else { panic!() };
+    let CommandDataOptionValue::Boolean(is_regex) = **map.get("正規表現")
+        .unwrap_or(&&CommandDataOptionValue::Boolean(false))
+        else { panic!() };
 
     debug!(key = %key, value = %value, is_regex = %is_regex, "/dictionary add");
 
@@ -63,7 +68,7 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
                         .color(Color::from_rgb(0x66, 0xbb, 0x6a))
                         .fields([
                             ("単語", format!("```{}```", item.key), false),
-                            ("読み", format!("```{}```", item.value), false)
+                            ("読み", format!("```{}```", if item.value.is_empty() {" ".into()} else {item.value}), false)
                         ])
                 })
             })

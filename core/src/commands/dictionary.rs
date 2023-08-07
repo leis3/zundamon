@@ -41,7 +41,6 @@ pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicatio
                 .create_sub_option(|option| {
                     option.name("読み")
                         .kind(CommandOptionType::String)
-                        .required(true)
                         .description("辞書に登録する単語の読み方")
                 })
                 .create_sub_option(|option| {
