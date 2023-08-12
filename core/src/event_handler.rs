@@ -147,7 +147,9 @@ impl EventHandler for Handler {
                 let config = data_read.get::<ConfigData>().unwrap();
                 let mut config_lock = config.lock().unwrap();
                 let dict = &config_lock.guild_config(guild.id).dictionary;
-                dict.apply(&msg.content).unwrap_or(msg.content.clone())
+                dict.apply(&msg.content)
+                    .unwrap_or(msg.content.clone())
+                    .replace("\n", "、")
             };
 
             text.push_str(&content);
