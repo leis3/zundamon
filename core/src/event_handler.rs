@@ -181,16 +181,24 @@ impl EventHandler for Handler {
         {
             let Ok(Channel::Guild(channel)) = voice_channel.to_channel(&ctx.http).await else { return; };
             let Ok(members) = channel.members(&ctx.cache).await else { return; };
+
             if members.is_empty() || members.iter().all(|member| member.user.bot) {
                 info!("auto disconnect");
                 let manager = songbird::get(&ctx).await.unwrap();
-                let _ = manager.leave(guild_id).await;
+
                 {
                     let data_read = ctx.data.read().await;
                     let connected = data_read.get::<ConnectedChannel>().unwrap();
                     let mut lock = connected.lock().unwrap();
                     lock.remove(&guild_id);
                 }
+
+                if let Some(handle) = manager.get(guild_id) {
+                    let handler = handle.lock().await;
+                    handler.queue().modify_queue(|q| q.clear());
+                }
+                let _ = manager.leave(guild_id).await;
+
             }
         }
     }

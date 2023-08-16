@@ -21,6 +21,11 @@ pub async fn run(ctx: &Context, interaction: &ApplicationCommandInteraction) -> 
         let mut lock = connected.lock().unwrap();
         lock.remove(&guild_id);
     }
+
+    if let Some(handle) = manager.get(guild_id) {
+        let handler = handle.lock().await;
+        handler.queue().modify_queue(|q| q.clear());
+    }
     let success =  manager.leave(guild_id).await.is_ok();
 
     interaction.create_interaction_response(&ctx.http, |response| {
