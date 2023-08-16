@@ -226,7 +226,13 @@ async fn speak(ctx: &Context, guild_id: GuildId, text: &str) -> Result<()> {
     let Ok(data) = synthesis::synthesis(text, speaker_id) else {
         anyhow::bail!("Failed to synthesis");
     };
-    let input = synthesis::ffmpeg(&data);
+    let input = match synthesis::ffmpeg(&data) {
+        Ok(input) => input,
+        Err(e) => {
+            eprintln!("{e:?}");
+            anyhow::bail!("Failed to process ffmpeg successfully");
+        }
+    };
     let mut handler = handle.lock().await;
     handler.enqueue_source(input);
 
