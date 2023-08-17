@@ -2,13 +2,12 @@ use std::io::Write;
 use std::sync::Arc;
 use vvcore::*;
 use once_cell::sync::Lazy;
-use tracing::error;
 use songbird::input::{
     Input,
     Codec,
-    Reader,
     Metadata,
-    Container
+    Container,
+    children_to_reader
 };
 
 static VOICEVOX_CORE: Lazy<VoicevoxCore> = Lazy::new(|| {
@@ -32,7 +31,7 @@ pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
 }
 
 /// ffmpegで音声を処理する
-pub fn ffmpeg(data: &[u8]) -> anyhow::Result<Input> {
+pub fn ffmpeg(data: &[u8]) -> Input {
     let metadata = {
         let rdr = hound::WavReader::new(data).unwrap();
         let spec = rdr.spec();
@@ -67,41 +66,21 @@ pub fn ffmpeg(data: &[u8]) -> anyhow::Result<Input> {
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .spawn()
-        .map_err(|e| {
-            error!("Failed to spawn process: {e:?}");
-            e
-        })?;
+        .expect("Failed to spawn process");
 
 
-    let Some(mut stdin) = command.stdin.take() else {
-        error!("Failed to open stdin");
-        anyhow::bail!("Failed to open stdin");
-    };
+    let mut stdin = command.stdin.take().expect("Failed to open stdin");
     let data = Arc::new(data.to_vec());
     std::thread::spawn(move || {
         // `/skip`によってBroken pipeになる可能性があるので結果を無視する
         let _ = stdin.write_all(&data);
-    }).join().unwrap();
+    });
 
-    let output = command.wait_with_output()
-        .map_err(|e| {
-            error!("Failed to wait on child: {e:?}");
-            e
-        })?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-        error!("The exit code of ffmpeg was not SUCCESS; stderr: {stderr:?}");
-        anyhow::bail!("The exit code of ffmpeg was not SUCCESS");
-    }
-
-    let data = output.stdout;
-
-    Ok(Input::new(
+    Input::new(
         true,
-        Reader::from_memory(data),
+        children_to_reader::<f32>(vec![command]),
         Codec::FloatPcm,
         Container::Raw,
         Some(metadata)
-    ))
+    )
 }
