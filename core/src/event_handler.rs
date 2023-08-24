@@ -56,6 +56,7 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
+        synthesis::initialize();
         for guild in &ready.guilds {
             let guild_id = guild.id;
             let _commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
