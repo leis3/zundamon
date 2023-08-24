@@ -24,8 +24,22 @@ pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
     if !VOICEVOX_CORE.is_model_loaded(speaker_id) {
         VOICEVOX_CORE.load_model(speaker_id).unwrap();
     }
+
+    let mut query: serde_json::Value = serde_json::from_str(
+        VOICEVOX_CORE.audio_query(text, speaker_id, VoicevoxCore::make_default_audio_query_options())?.as_str()
+    ).unwrap();
+    if let Some(value) = query.get_mut("output_stereo") {
+        *value = true.into();
+    }
+    if let Some(value) = query.get_mut("output_sampling_rate") {
+        *value = 48000.into();
+    }
+    if let Some(value) = query.get_mut("speed_scale") {
+        *value = 1.2.into();
+    }
     
-    let wav = VOICEVOX_CORE.tts_simple(text, speaker_id)?;
+    let query = serde_json::to_string(&query).unwrap();
+    let wav = VOICEVOX_CORE.synthesis(&query, speaker_id, VoicevoxCore::make_default_synthesis_options())?;
 
     Ok(wav.as_slice().to_vec())
 }
@@ -34,34 +48,17 @@ pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
 pub fn ffmpeg(data: &[u8]) -> Input {
     let metadata = {
         let rdr = hound::WavReader::new(data).unwrap();
-        let spec = rdr.spec();
-        let duration = rdr.duration() as f64 / spec.sample_rate as f64;
+        let duration = rdr.duration() as f64 / rdr.spec().sample_rate as f64;
         Metadata {
-            channels: Some(spec.channels as u8),
+            channels: Some(2),
             duration: Some(std::time::Duration::from_secs_f64(duration)),
-            sample_rate: Some(spec.sample_rate),
+            sample_rate: Some(48000),
             ..Default::default()
         }
     };
 
-    let args = [
-        "-i",
-        "-",
-        "-f",
-        "s16le",
-        "-af",
-        "atempo=1.2",
-        "-ac",
-        "2",
-        "-ar",
-        "48000",
-        "-acodec",
-        "pcm_f32le",
-        "-"
-    ];
-
     let mut command = std::process::Command::new("ffmpeg")
-        .args(args)
+        .args(["-i", "-", "-f", "s16le", "-"])
         .stderr(std::process::Stdio::null())
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
@@ -78,8 +75,8 @@ pub fn ffmpeg(data: &[u8]) -> Input {
 
     Input::new(
         true,
-        children_to_reader::<f32>(vec![command]),
-        Codec::FloatPcm,
+        children_to_reader::<u8>(vec![command]),
+        Codec::Pcm,
         Container::Raw,
         Some(metadata)
     )
