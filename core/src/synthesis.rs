@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::time::Duration;
 use vvcore::*;
 use once_cell::sync::Lazy;
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -7,7 +6,6 @@ use songbird::input::{
     Input,
     Codec,
     Reader,
-    Metadata,
     Container
 };
 
@@ -51,32 +49,21 @@ pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
 
 /// wavデータから`Input`を生成する
 pub fn to_input(data: &[u8]) -> Input {
-    let (header, data) = wav::read(&mut Cursor::new(data)).unwrap();
-    let data = data.as_sixteen().unwrap();
-
+    let (_, data) = wav::read(&mut Cursor::new(data)).unwrap();
     // `synthesis()`で得られたデータはpcm_s16leである一方で
     // `Reader::from`ではVec<u8>を要求しているのでリトルエンディアンで変換する
     let data = {
         let mut buf = Vec::new();
-        for &i in data {
+        for &i in data.as_sixteen().unwrap() {
             buf.write_i16::<LittleEndian>(i).unwrap();
         }
         buf
     };
-
-    let duration = data.len() as f64 / header.channel_count as f64 / header.sampling_rate as f64;
-    let metadata = Metadata {
-        channels: Some(2),
-        duration: Some(Duration::from_secs_f64(duration)),
-        sample_rate: Some(48000),
-        ..Default::default()
-    };
-
     Input::new(
         true,
         Reader::from(data.clone()),
         Codec::Pcm,
         Container::Raw,
-        Some(metadata)
+        None
     )
 }
