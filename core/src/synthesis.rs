@@ -1,13 +1,14 @@
-use std::io::Write;
-use std::sync::Arc;
+use std::io::Cursor;
+use std::time::Duration;
 use vvcore::*;
 use once_cell::sync::Lazy;
+use byteorder::{LittleEndian, WriteBytesExt};
 use songbird::input::{
     Input,
     Codec,
+    Reader,
     Metadata,
-    Container,
-    children_to_reader
+    Container
 };
 
 static VOICEVOX_CORE: Lazy<VoicevoxCore> = Lazy::new(|| {
@@ -48,38 +49,32 @@ pub fn synthesis(text: &str, speaker_id: u32) -> Result<Vec<u8>, ResultCode> {
     Ok(wav.as_slice().to_vec())
 }
 
-/// ffmpegで音声を処理する
-pub fn ffmpeg(data: &[u8]) -> Input {
-    let metadata = {
-        let rdr = hound::WavReader::new(data).unwrap();
-        let duration = rdr.duration() as f64 / rdr.spec().sample_rate as f64;
-        Metadata {
-            channels: Some(2),
-            duration: Some(std::time::Duration::from_secs_f64(duration)),
-            sample_rate: Some(48000),
-            ..Default::default()
+/// wavデータから`Input`を生成する
+pub fn to_input(data: &[u8]) -> Input {
+    let (header, data) = wav::read(&mut Cursor::new(data)).unwrap();
+    let data = data.as_sixteen().unwrap();
+
+    // `synthesis()`で得られたデータはpcm_s16leである一方で
+    // `Reader::from`ではVec<u8>を要求しているのでリトルエンディアンで変換する
+    let data = {
+        let mut buf = Vec::new();
+        for &i in data {
+            buf.write_i16::<LittleEndian>(i).unwrap();
         }
+        buf
     };
 
-    let mut command = std::process::Command::new("ffmpeg")
-        .args(["-i", "-", "-f", "s16le", "-"])
-        .stderr(std::process::Stdio::null())
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn process");
-
-
-    let mut stdin = command.stdin.take().expect("Failed to open stdin");
-    let data = Arc::new(data.to_vec());
-    std::thread::spawn(move || {
-        // `/skip`によってBroken pipeになる可能性があるので結果を無視する
-        let _ = stdin.write_all(&data);
-    });
+    let duration = data.len() as f64 / header.channel_count as f64 / header.sampling_rate as f64;
+    let metadata = Metadata {
+        channels: Some(2),
+        duration: Some(Duration::from_secs_f64(duration)),
+        sample_rate: Some(48000),
+        ..Default::default()
+    };
 
     Input::new(
         true,
-        children_to_reader::<u8>(vec![command]),
+        Reader::from(data.clone()),
         Codec::Pcm,
         Container::Raw,
         Some(metadata)
