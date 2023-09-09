@@ -143,12 +143,28 @@ impl EventHandler for Handler {
                 text.push_str("添付ファイル ");
             }
 
-            let content = {
+            let mut content = msg.content.clone();
+            for user in &msg.mentions {
+                let id = user.id;
+                let name = user.nick_in(&ctx.http, guild.id).await.unwrap_or(user.name.clone());
+                content = content.replace(&format!("<@{id}>"), &format!("@{name}"));
+            }
+
+            for role in &msg.mention_roles {
+                let id = role.0;
+                let name = role.to_role_cached(&ctx.cache).map_or(String::new(), |r| r.name.clone());
+                print!("content: {content:?} -> ");
+                content = content.replace(&format!("<@&{id}>"), &format!("@{name}"));
+                println!("{content:?}");
+            }
+
+
+            content = {
                 let data_read = ctx.data.read().await;
                 let config = data_read.get::<ConfigData>().unwrap();
                 let mut config_lock = config.lock().unwrap();
                 let dict = &config_lock.guild_config(guild.id).dictionary;
-                dict.apply(&msg.content)
+                dict.apply(&content)
                     .unwrap_or(msg.content.clone())
                     .replace("\n", "、")
             };
