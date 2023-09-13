@@ -9,7 +9,7 @@ once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-aho-corasick = "1.0.2"
+aho-corasick = "1.0.4"
 kanaria = "0.2.0"
 csv = "1.2.2"
 maplit = "1.0.2"
